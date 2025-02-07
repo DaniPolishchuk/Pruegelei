@@ -12,64 +12,15 @@ ctx.fillRect(0, 0, canvas.width, canvas.height);
 
 const gravity = 0.5;
 
-class Sprite {
-    constructor({position, velocity, color, offset}) {
-        this.position = position;
-        this.velocity = velocity;
-        this.width = 50;
-        this.height = 150;
-        this.color = color;
-        this.lastKey;
-        this.attackBox = {
-            position: {
-                x: this.position.x,
-                y: this.position.y
-            },
-            width: 100,
-            height: 50,
-            offset: offset
-        };
-        this.isAttacking = false;
-        this.health = 100;
-    }
+const background = new Sprite({
+    position: {
+        x: 0,
+        y: 0,
+    },
+    imageSrc: "./Backgrounds/Background1.png"
+})
 
-    draw() {
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
-
-        // attack box
-        if (this.isAttacking) {
-            ctx.fillStyle = "white";
-            ctx.fillRect(this.attackBox.position.x, this.attackBox.position.y, this.attackBox.width, this.attackBox.height);
-        }
-
-    }
-
-    attack() {
-        this.isAttacking = true;
-        setTimeout(() => {
-            this.isAttacking = false;
-        }, 100)
-    }
-
-    update() {
-        this.draw();
-
-        this.attackBox.position.x = this.position.x - this.attackBox.offset.x;
-        this.attackBox.position.y = this.position.y;
-
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-
-        if (this.position.y + this.height + this.velocity.y > canvas.height) {
-            this.velocity.y = 0;
-        } else {
-            this.velocity.y += gravity;
-        }
-    }
-}
-
-const player1 = new Sprite({
+const player1 = new Fighter({
     position: {
         x: 0,
         y: 0,
@@ -85,7 +36,7 @@ const player1 = new Sprite({
     }
 });
 
-const player2 = new Sprite({
+const player2 = new Fighter({
     position: {
         x: 400,
         y: 100,
@@ -116,39 +67,14 @@ const keys = {
     }
 };
 
-function rectangularCollusion(rectangel1, rectangel2) {
-    return (
-        rectangel1.attackBox.position.x + rectangel1.attackBox.width >= rectangel2.position.x &&
-        rectangel1.attackBox.position.x <= rectangel2.position.x + rectangel2.width &&
-        rectangel1.attackBox.position.y + rectangel1.attackBox.height >= rectangel2.position.y &&
-        rectangel1.attackBox.position.y <= rectangel2.position.y + rectangel2.height
-    )
-}
-
-function decreaseTimer(){
-    let timerValue = parseInt(document.getElementById("timer").textContent.trim());
-    if (timerValue > 0) {
-        setTimeout(decreaseTimer, 1000);
-        timerValue--;
-        document.getElementById("timer").textContent = String(timerValue);
-    } else if (timerValue === 0) {
-        document.querySelector("#gameResult").style.display = "flex";
-        if (player1.health > player2.health) {
-            document.querySelector("#gameResult").innerHTML = "Player 1 won";
-        } else if (player1.health < player2.health) {
-            document.querySelector("#gameResult").innerHTML = "Player 2 won";
-        } else {
-            document.querySelector("#gameResult").innerHTML = "Tie";
-        }
-    }
-}
-
 decreaseTimer()
 
 function animate() {
     window.requestAnimationFrame(animate);  // what we want to loop over and over again
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    background.update();
+
     player1.update();
     player2.update();
 
@@ -179,6 +105,10 @@ function animate() {
         player2.isAttacking = false;
         player1.health -= 10;
         document.querySelector("#player1health").style.width = player1.health + "%";
+    }
+
+    if (player2.health <= 0 || player1.health <= 0) {
+         determineWinner(player1, player2, timerID);
     }
 
 }
