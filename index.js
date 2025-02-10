@@ -116,9 +116,9 @@ function animate() {
     }
 
     // ===== Collision & Health Management =====
-    if (rectangularCollusion(player1, player2, true) && player1.isAttacking && player1.framesCurrent >= player1.attackFrames / 2) {
+    if (rectangularCollision(player1, player2, true) && player1.isAttacking && player1.framesCurrent >= player1.attackFrames / 2) {
+        player2.takeHit();
         player1.isAttacking = false;
-        player2.health -= 10;
         document.querySelector("#player2health").style.width = player2.health + "%";
     }
 
@@ -126,9 +126,9 @@ function animate() {
         player1.isAttacking = false;
     }
 
-    if (rectangularCollusion(player2, player1, false) && player2.isAttacking && player2.framesCurrent >= player2.attackFrames / 2) {
+    if (rectangularCollision(player2, player1, false) && player2.isAttacking && player2.framesCurrent >= player2.attackFrames / 2) {
+        player1.takeHit()
         player2.isAttacking = false;
-        player1.health -= 10;
         document.querySelector("#player1health").style.width = player1.health + "%";
     }
 
@@ -154,84 +154,89 @@ initializeGame();
 
 // ===== Keyboard Event Listeners =====
 window.addEventListener("keydown", (event) => {
-    switch (event.key) {
-        // --- Player 1 ---
-        case "d":
-            keys.d.pressed = true;
-            player1.lastKey = "d";
-            break;
-        case "a":
-            keys.a.pressed = true;
-            player1.lastKey = "a";
-            break;
-        case "w":
-            if (player1.position.y + player1.height >= canvas.height / 1.187) {
-                player1.velocity.y = -canvas.height / 45;
-            }
-            break;
-        case "1":
-            player1.attackStyle = "style1";
-            player1.attackBox = player1.sprites.attack1.attackBox;
-            player1.attackFrames = player1.sprites.attack1.framesMax;
-            player1.attack();
-            break;
-        case "2":
-            player1.attackStyle = "style2";
-            player1.attackBox = player1.sprites.attack2.attackBox;
-            player1.attackFrames = player1.sprites.attack2.framesMax;
-            player1.attack();
-            break;
-        case "3":
-            player1.attackStyle = "style3";
-            player1.attackBox = player1.sprites.attack3.attackBox;
-            player1.attackFrames = player1.sprites.attack3.framesMax;
-            player1.attack();
-            break;
-        case "4":
-            player1.attackStyle = "style4";
-            player1.attackBox = player1.sprites.attack4.attackBox;
-            player1.attackFrames = player1.sprites.attack4.framesMax;
-            player1.attack();
-            break;
-
-        // --- Player 2 ---
-        case "ArrowLeft":
-            keys.ArrowLeft.pressed = true;
-            player2.lastKey = "ArrowLeft";
-            break;
-        case "ArrowRight":
-            keys.ArrowRight.pressed = true;
-            player2.lastKey = "ArrowRight";
-            break;
-        case "ArrowUp":
-            if (player2.position.y + player2.height >= canvas.height / 1.187) {
-                player2.velocity.y = -canvas.height / 45;
-            }
-            break;
-        case "0":
-            player2.attackStyle = "style1";
-            player2.attackBox = player2.sprites.attack1.attackBox;
-            player2.attackFrames = player2.sprites.attack1.framesMax;
-            player2.attack();
-            break;
-        case "9":
-            player2.attackStyle = "style2";
-            player2.attackBox = player2.sprites.attack2.attackBox;
-            player2.attackFrames = player2.sprites.attack2.framesMax;
-            player2.attack();
-            break;
-        case "8":
-            player2.attackStyle = "style3";
-            player2.attackBox = player2.sprites.attack3.attackBox;
-            player2.attackFrames = player2.sprites.attack3.framesMax;
-            player2.attack();
-            break;
-        case "7":
-            player2.attackStyle = "style4";
-            player2.attackBox = player2.sprites.attack4.attackBox;
-            player2.attackFrames = player2.sprites.attack4.framesMax;
-            player2.attack();
-            break;
+    if (!player1.dead) {
+        switch (event.key) {
+            // --- Player 1 ---
+            case "d":
+                keys.d.pressed = true;
+                player1.lastKey = "d";
+                break;
+            case "a":
+                keys.a.pressed = true;
+                player1.lastKey = "a";
+                break;
+            case "w":
+                if (player1.position.y + player1.height >= canvas.height / 1.187) {
+                    player1.velocity.y = -canvas.height / 45;
+                }
+                break;
+            case "1":
+                player1.attackStyle = "style1";
+                player1.attackBox = player1.sprites.attack1.attackBox;
+                player1.attackFrames = player1.sprites.attack1.framesMax;
+                player1.attack();
+                break;
+            case "2":
+                player1.attackStyle = "style2";
+                player1.attackBox = player1.sprites.attack2.attackBox;
+                player1.attackFrames = player1.sprites.attack2.framesMax;
+                player1.attack();
+                break;
+            case "3":
+                player1.attackStyle = "style3";
+                player1.attackBox = player1.sprites.attack3.attackBox;
+                player1.attackFrames = player1.sprites.attack3.framesMax;
+                player1.attack();
+                break;
+            case "4":
+                player1.attackStyle = "style4";
+                player1.attackBox = player1.sprites.attack4.attackBox;
+                player1.attackFrames = player1.sprites.attack4.framesMax;
+                player1.attack();
+                break;
+        }
+    }
+    if (!player2.dead) {
+        switch (event.key) {
+            // --- Player 2 ---
+            case "ArrowLeft" :
+                keys.ArrowLeft.pressed = true;
+                player2.lastKey = "ArrowLeft";
+                break;
+            case "ArrowRight" :
+                keys.ArrowRight.pressed = true;
+                player2.lastKey = "ArrowRight";
+                break;
+            case "ArrowUp" :
+                if (player2.position.y + player2.height >= canvas.height / 1.187) {
+                    player2.velocity.y = -canvas.height / 45;
+                }
+                break;
+            case "0" :
+                player2.attackStyle = "style1";
+                player2.attackBox = player2.sprites.attack1.attackBox;
+                player2.attackFrames = player2.sprites.attack1.framesMax;
+                player2.attack();
+                break;
+            case "9" :
+                player2.attackStyle = "style2";
+                player2.attackBox = player2.sprites.attack2.attackBox;
+                player2.attackFrames = player2.sprites.attack2.framesMax;
+                player2.attack();
+                break;
+            case "8" :
+                player2.attackStyle = "style3";
+                player2.attackBox = player2.sprites.attack3.attackBox;
+                player2.attackFrames = player2.sprites.attack3.framesMax;
+                player2.attack();
+                break;
+            case "7" :
+                player2.attackStyle = "style4";
+                player2.attackBox = player2.sprites.attack4.attackBox;
+                player2.attackFrames = player2.sprites.attack4.framesMax;
+                player2.attack();
+                break;
+        }
     }
 });
 

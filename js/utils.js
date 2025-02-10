@@ -1,4 +1,4 @@
-function rectangularCollusion(fighter1, fighter2, enemyIsRight) {
+function rectangularCollision(fighter1, fighter2, enemyIsRight) {
     if (enemyIsRight) {
         return (fighter1.attackBox.position.x + fighter1.attackBox.width >= fighter2.position.x - fighter2.width &&
             fighter1.attackBox.position.x <= fighter2.position.x + fighter2.width);
@@ -20,7 +20,7 @@ function determineWinner(player1, player2, timerId) {
     }
     setTimeout(() => {
         location.reload();
-    }, 1500);
+    }, 3000);
 }
 
 let timerID;
