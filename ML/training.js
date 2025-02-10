@@ -23,10 +23,7 @@ async function gameLoop() {
 
     await Promise.all(fighters.map((fighter, i) => executeAction(fighter, actions[i])));
 
-    const newState = getGameState();
-
     for (let i = 0; i < fighters.length; i += 2) {
-        const actionPromises = fighters.map((_, i) => chooseAction(getGameState(fighters[i], fighters[i +1]), models[i]));
         if (i + 1 < fighters.length) { // Sicherstellen, dass ein Paar existiert
             let fighter1 = fighters[i];
             let fighter2 = fighters[i + 1];
@@ -38,7 +35,7 @@ async function gameLoop() {
                 fighter2.health -= 10;
                 //await trainModel(state, actions[i], 2, newState, models[i]);
                 if (fighter2.health === 50) {
-                    firstWinnerModel = models[i];
+                    await winnerModel(models[i]);
                 }
             }
 
@@ -47,8 +44,7 @@ async function gameLoop() {
                 fighter1.health -= 10;
                 //await trainModel(state, actions[i + 1], 2, newState, models[i + 1]);
                 if (fighter1.health === 50) {
-                    firstWinnerModel = models[i + 1];
-                    await winnerModel(state, actions[i + 1], newState, models[i + 1]);
+                    await winnerModel(models[i + 1]);
                 }
             }
 
@@ -58,10 +54,7 @@ async function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-async function winnerModel(state, action, newState, model) {
-    await trainModel(state, action, 10, newState, model); // Training asynchron starten, ohne auf das Ergebnis zu warten
-
-    // Starte die Mutation parallel für alle Modelle
+async function winnerModel(model) {
     models = await Promise.all(models.map(async () => mutateModel(model)));
 }
 
@@ -105,17 +98,6 @@ async function chooseAction(state, model) {
     });
 }
 
-// 🏋️‍♂️ Training: Q-Learning
-async function trainModel(state, action, reward, nextState, model) {
-    console.log("Training...");
-    const target = reward + 0.95 * Math.max(...model.predict(tf.tensor2d([nextState])).dataSync());
-    const targets = model.predict(tf.tensor2d([state])).dataSync();
-    targets[action] = target;
-
-    await model.fit(tf.tensor2d([state]), tf.tensor2d([targets]), { epochs: 10 });
-    console.log(model.getWeights());
-}
-
 // 🔄 Spielzustand abrufen
 function getGameState(fighter1, fighter2) {
     return [
@@ -149,6 +131,7 @@ function executeAction(player, action) {
             }
             break;
         case 3: // attack
+            debugger;
             player.attack();
             break;
     }
