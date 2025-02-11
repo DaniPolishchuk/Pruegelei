@@ -160,7 +160,6 @@ class Fighter {
         // override animations with attack animations
         switch (this.attackStyle) {
             case "style1":
-                console.log(this, this.sprites, this.sprites.attack1, this.sprites.attack1.image)
                 if (this.image === this.sprites.attack1.image && this.framesCurrent < this.sprites.attack1.framesMax - 1)
                     return;
                 break;

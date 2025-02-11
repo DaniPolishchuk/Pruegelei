@@ -131,7 +131,6 @@ function executeAction(player, action) {
             }
             break;
         case 3: // attack
-            debugger;
             player.attack();
             break;
     }
@@ -143,34 +142,29 @@ async function initializePlayers(fightCount){
     for(let i = 0; i <= fightCount; i++){
         fighters.push(new Fighter({
             position: {
-                x: canvas.width * 0.05, // 5% der Canvas-Breite
-                y: canvas.height * 0.15,
+                x: canvas.width * 0.25, // 5% der Canvas-Breite
+                y: canvas.height / 5,
             },
             velocity: {
                 x: 0,
                 y: 0,
             },
-            color: "green",
-            offset: {
-                x: 50,
-                y: 0,
-            }
         }));
+        await setFighterData(fighters[i], false, "Fantasy Warrior");
+        await sleep(1000);
         fighters.push(new Fighter({
             position: {
-                x: canvas.width * 0.50, // 50% der Canvas-Breite
-                y: canvas.height * 0.15,
+                x: canvas.width * 0.75, // 50% der Canvas-Breite
+                y: canvas.height / 5,
             },
             velocity: {
                 x: 0,
                 y: 0,
             },
-            color: "red",
-            offset: {
-                x: 50,
-                y: 0,
-            }
         }));
+        await setFighterData(fighters[i], true, "Evil Wizard 2");
+
+        await sleep(1000);
     }
     return fighters;
 }
@@ -208,6 +202,10 @@ function resetGame() {
         }
     }
     location.reload(true);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // 🏁 Spiel starten
