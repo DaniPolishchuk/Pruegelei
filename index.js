@@ -1,3 +1,51 @@
+const offscreenCanvas = document.createElement("canvas");
+const offscreenCtx = offscreenCanvas.getContext("2d");
+
+offscreenCanvas.width = 1280;
+offscreenCanvas.height = 720;
+
+function calculateCamera() {
+    const margin = 100; // zusätzlicher Rand, damit nicht direkt an den Spielern gezoomt wird
+
+    // Horizontale Berechnung basierend auf den Spielerpositionen:
+    const minX = Math.min(player1.position.x, player2.position.x) - margin;
+    const maxX = Math.max(player1.position.x + player1.width, player2.position.x + player2.width) + margin;
+    const viewportWidth = maxX - minX;
+    const scaleX = canvas.width / viewportWidth;
+    const cameraXDesired = (minX + maxX) / 2;  // gewünschter horizontaler Mittelpunkt
+
+    // Vertikale Berechnung (für den unteren Anker):
+    const minY = Math.min(player1.position.y, player2.position.y) - margin;
+    const maxY = Math.max(player1.position.y + player1.height, player2.position.y + player2.height) + margin;
+    const viewportHeight = maxY - minY;
+    const scaleY = canvas.height / viewportHeight;
+
+    // Bestimme den verwendeten Skalierungsfaktor (für gleichmäßigen Zoom):
+    const scale = Math.min(scaleX, scaleY);
+
+    // Ermittle den erlaubten Bereich für den horizontalen Kameramittelpunkt:
+    // Bei unserer Transformation (siehe animate()) gilt:
+    //   Offscreen-Canvas Ursprung (nach translate) ist canvas.width/2.
+    // Damit muss gelten, dass der linke Rand der Welt (worldLeft) nie weiter links als
+    // der Punkt (cameraX - canvas.width/(2*scale)) liegt.
+    // Daraus folgt, dass cameraX nicht kleiner als worldLeft + canvas.width/(2*scale) sein darf.
+    const cameraXMin = canvas.width / (2 * scale);
+    // Analog darf cameraX nicht größer sein als worldRight - canvas.width/(2*scale)
+    const cameraXMax = canvas.width - canvas.width / (2 * scale);
+    // Clamp den gewünschten Wert:
+    const cameraX = clamp(cameraXDesired, cameraXMin, cameraXMax);
+
+    // Für den vertikalen Anker: Wir wollen, dass der untere Bereich fix ist, also:
+    const cameraY = maxY;
+
+    return { scale, cameraX, cameraY };
+}
+
+
+function clamp(value, min, max) {
+    return Math.max(min, Math.min(value, max));
+}
+
 // ===== Canvas Setup =====
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
@@ -94,33 +142,37 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
 // ===== Main Animation Loop =====
 function animate() {
     window.requestAnimationFrame(animate);
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Update background and players
-    background.update();
-    player1.update();
-    player2.update();
+    const { scale, cameraX, cameraY } = calculateCamera();
+
+    offscreenCtx.fillStyle = "black";
+    offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+    offscreenCtx.save();
+
+    offscreenCtx.translate(offscreenCanvas.width / 2, offscreenCanvas.height);
+
+    offscreenCtx.scale(scale, scale);
+
+    offscreenCtx.translate(-cameraX, -cameraY);
+
+    background.update(offscreenCtx);
+    player1.update(offscreenCtx);
+    player2.update(offscreenCtx);
 
     if (player1.position.x < player2.position.x) {
         player1.flip = false;
         player2.flip = true;
     } else {
-        // Otherwise, when the fighters have switched positions:
-        // - player1 should face left (flip = true)
-        // - player2 should face right (flip = false)
         player1.flip = true;
         player2.flip = false;
     }
 
-    // Reset horizontal velocities
     player1.velocity.x = 0;
     player2.velocity.x = 0;
 
-    // ===== Poll Gamepad States =====
     const { gp1State, gp2State } = pollGamepadInputs();
 
-    // ===== Player 1 Movement (Keyboard + Gamepad #1) =====
     updateHorizontalMovement(
         player1,
         keys.a.pressed || gp1State.left,
@@ -136,7 +188,6 @@ function animate() {
         player1.attack();
     }
 
-    // ===== Player 2 Movement (Keyboard + Gamepad #2) =====
     updateHorizontalMovement(
         player2,
         keys.ArrowLeft.pressed || gp2State.left,
@@ -152,14 +203,18 @@ function animate() {
         player2.attack();
     }
 
-    // ===== Collision & Health Management =====
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
 
     if (player2.health <= 0 || player1.health <= 0) {
         determineWinner(player1, player2, timerID);
     }
+
+    offscreenCtx.restore();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
 }
+
 
 // ===== Game Initialization =====
 async function initializeGame() {
