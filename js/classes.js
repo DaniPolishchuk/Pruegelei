@@ -124,7 +124,6 @@ class Fighter {
             this.attackBox.position.x = this.position.x  - this.width + this.baseAttackBoxOffset.x - this.attackBox.width;
         }
         this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
-
         /*
         ctxArg.fillRect(
             this.attackBox.position.x,
