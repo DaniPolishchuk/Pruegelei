@@ -165,7 +165,11 @@ function animate() {
 async function initializeGame() {
     // Wait for fighter data to load for both players
     await Promise.all([
-        setFighterData(player1, false, "Fantasy Warrior"), // Evil Wizard 2
+        // FIGHTERS:
+        // Fantasy Warrior, Evil Wizard 2, Evil Wizard, Hero Knight, Hero Knight 2, Huntress, Martial Hero
+        // Martial Hero 2, Martial Hero 3, Medieval Warrior, Medieval Warrior 2, Medieval Warrior 3,
+        // Medieval King, Medieval King 2, Wizard
+        setFighterData(player1, false, "Fantasy Warrior"),
         setFighterData(player2, true, "Evil Wizard 2")
     ]);
     // Start the animation loop
