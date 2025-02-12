@@ -5,7 +5,7 @@ offscreenCanvas.width = 1280;
 offscreenCanvas.height = 720;
 
 function calculateCamera() {
-    const margin = 100; // zusätzlicher Rand
+    const margin = 200;
     const worldLeft = 0;
     const worldRight = canvas.width;
 
@@ -19,7 +19,7 @@ function calculateCamera() {
     let candidateScale = canvas.width / requiredViewWidth;
 
     let effectiveScale = Math.max(candidateScale, 1);
-
+    effectiveScale = effectiveScale > 2 ? 2 : effectiveScale;
     let desiredCenterX = (playerLeft + playerRight) / 2;
     const halfViewWidth = (canvas.width / effectiveScale) / 2;
     desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
@@ -28,14 +28,10 @@ function calculateCamera() {
         player1.position.y + player1.height,
         player2.position.y + player2.height
     );
-    const cameraY = playerBottom + margin;
+    const cameraY = Math.max(player1.position.y + player1.height, player2.position.y + player2.height) + 100;
+
 
     return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
-}
-
-
-function clamp(value, min, max) {
-    return Math.max(min, Math.min(value, max));
 }
 
 const canvas = document.querySelector("canvas");
