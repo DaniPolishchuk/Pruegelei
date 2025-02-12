@@ -5,40 +5,32 @@ offscreenCanvas.width = 1280;
 offscreenCanvas.height = 720;
 
 function calculateCamera() {
-    const margin = 100; // zusätzlicher Rand, damit nicht direkt an den Spielern gezoomt wird
+    const margin = 100; // zusätzlicher Rand
+    const worldLeft = 0;
+    const worldRight = canvas.width;
 
-    // Horizontale Berechnung basierend auf den Spielerpositionen:
-    const minX = Math.min(player1.position.x, player2.position.x) - margin;
-    const maxX = Math.max(player1.position.x + player1.width, player2.position.x + player2.width) + margin;
-    const viewportWidth = maxX - minX;
-    const scaleX = canvas.width / viewportWidth;
-    const cameraXDesired = (minX + maxX) / 2;  // gewünschter horizontaler Mittelpunkt
+    const playerLeft = Math.min(player1.position.x, player2.position.x);
+    const playerRight = Math.max(
+        player1.position.x + player1.width,
+        player2.position.x + player2.width
+    );
 
-    // Vertikale Berechnung (für den unteren Anker):
-    const minY = Math.min(player1.position.y, player2.position.y) - margin;
-    const maxY = Math.max(player1.position.y + player1.height, player2.position.y + player2.height) + margin;
-    const viewportHeight = maxY - minY;
-    const scaleY = canvas.height / viewportHeight;
+    const requiredViewWidth = (playerRight - playerLeft) + 2 * margin;
+    let candidateScale = canvas.width / requiredViewWidth;
 
-    // Bestimme den verwendeten Skalierungsfaktor (für gleichmäßigen Zoom):
-    const scale = Math.min(scaleX, scaleY);
+    let effectiveScale = Math.max(candidateScale, 1);
 
-    // Ermittle den erlaubten Bereich für den horizontalen Kameramittelpunkt:
-    // Bei unserer Transformation (siehe animate()) gilt:
-    //   Offscreen-Canvas Ursprung (nach translate) ist canvas.width/2.
-    // Damit muss gelten, dass der linke Rand der Welt (worldLeft) nie weiter links als
-    // der Punkt (cameraX - canvas.width/(2*scale)) liegt.
-    // Daraus folgt, dass cameraX nicht kleiner als worldLeft + canvas.width/(2*scale) sein darf.
-    const cameraXMin = canvas.width / (2 * scale);
-    // Analog darf cameraX nicht größer sein als worldRight - canvas.width/(2*scale)
-    const cameraXMax = canvas.width - canvas.width / (2 * scale);
-    // Clamp den gewünschten Wert:
-    const cameraX = clamp(cameraXDesired, cameraXMin, cameraXMax);
+    let desiredCenterX = (playerLeft + playerRight) / 2;
+    const halfViewWidth = (canvas.width / effectiveScale) / 2;
+    desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
 
-    // Für den vertikalen Anker: Wir wollen, dass der untere Bereich fix ist, also:
-    const cameraY = maxY;
+    const playerBottom = Math.max(
+        player1.position.y + player1.height,
+        player2.position.y + player2.height
+    );
+    const cameraY = playerBottom + margin;
 
-    return { scale, cameraX, cameraY };
+    return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
 }
 
 
@@ -46,7 +38,6 @@ function clamp(value, min, max) {
     return Math.max(min, Math.min(value, max));
 }
 
-// ===== Canvas Setup =====
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1280;
