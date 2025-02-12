@@ -5,62 +5,25 @@
     <title>My Game</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <style>
-        * {
-            box-sizing: border-box;
-            overflow: hidden;
-            margin: 0;
-            padding: 0;
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css"> <!-- Link to external CSS file -->
 </head>
 <body>
-<div style="position: relative">
-    <div style="position: absolute; display: flex; width: 100%; align-items: center; padding: 20px;">
+<div id="gameContainer">
+    <div class="health-bar-container">
         <!-- player 1 health -->
-        <div style="position: relative; height: 30px; width: 100%; display: flex; align-items: center; justify-content: flex-end;">
-            <div style="background-color: yellow; height: 100%; width: 100%"></div>
-            <div id="player1health"
-                 style="position: absolute; background-color: blue; top: 0; bottom: 0; right: 0; width: 100%"></div>
+        <div id="player1HealthBar">
+            <div class="health-bar"></div>
+            <div id="player1Health"></div>
         </div>
         <!-- timer -->
-        <div id="timer"
-          style="
-            background-color: red;
-            font-family: 'Press Start 2P', cursive;
-            font-size: 45px;
-            text-transform: uppercase;
-            text-shadow: 2px 2px 0px black,
-                 4px 4px 0px gray;
-            color: white;
-            height: 100px;
-            width: 100px;
-            flex-shrink: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center">100</div>
+        <div id="timer">100</div>
         <!-- player 2 health -->
-        <div style="position: relative; height: 30px; width: 100%;">
-            <div style="background-color: yellow; height: 100%"></div>
-            <div id="player2health"
-                 style="position: absolute; background-color: blue; top: 0; bottom: 0; left: 0; right: 0;"></div>
+        <div id="player2HealthBar">
+            <div class="health-bar"></div>
+            <div id="player2Health"></div>
         </div>
     </div>
-    <div id="gameResult"
-      style="
-        font-family: 'Press Start 2P', cursive;
-        font-size: 100px;
-        text-transform: uppercase;
-        text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
-        position: absolute;
-        color: orange;
-        align-items: center;
-        justify-content: center;
-        top: 0;
-        right: 0;
-        bottom: 0;
-        left: 0;
-        display: none;"></div>
+    <div id="gameResult"></div>
     <canvas></canvas>
 </div>
 <script src="js/utils.js"></script>

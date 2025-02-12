@@ -24,7 +24,7 @@ class Fighter {
         this.framesMax;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
-        this.framesHold = 7;
+        this.framesHold = 5;
         this.attackBox;
         this.attackFrames;
         this.velocity = velocity;
@@ -111,8 +111,13 @@ class Fighter {
                 }
             }
         }
-        this.attackBox.position.x = this.position.x + this.attackBox.offset.x;
-        this.attackBox.position.y = this.position.y + this.attackBox.offset.y;
+        if (!this.flip) {
+            this.attackBox.position.x = this.position.x + this.baseAttackBoxOffset.x;
+        } else {
+            this.attackBox.position.x = this.position.x  - this.width + this.baseAttackBoxOffset.x - this.attackBox.width;
+        }
+        this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
+
         /*
         ctx.fillRect(
             this.attackBox.position.x,
