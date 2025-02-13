@@ -5,14 +5,21 @@ class Sprite {
         this.height = canvas.height;
         this.image = new Image();
         this.image.src = imageSrc;
+        this.scale = 1;
     }
 
-    draw() {
-        ctx.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
+    draw(ctxArg = ctx) {
+        ctxArg.drawImage(
+            this.image,
+            this.position.x,
+            this.position.y,
+            this.width * this.scale,
+            this.height * this.scale
+        );
     }
 
-    update() {
-        this.draw();
+    update(ctxArg = ctx) {
+        this.draw(ctxArg);
     }
 }
 
@@ -20,7 +27,7 @@ class Fighter {
     constructor({position, velocity}) {
         this.position = position;
         this.image = new Image();
-        this.scale;
+        this.scale = 1;
         this.framesMax;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
@@ -40,7 +47,7 @@ class Fighter {
         this.dead = false;
     }
 
-    draw() {
+    draw(ctxArg = ctx) {
         const frameWidth = this.image.width / this.framesMax;
         const drawWidth = frameWidth * this.scale;
         const drawHeight = this.image.height * this.scale;
@@ -48,11 +55,9 @@ class Fighter {
         const drawY = this.position.y - this.offset.y;
 
         if (this.flip) {
-            ctx.save();
-            // Flip the context horizontally.
-            ctx.scale(-1, 1);
-            // When flipped, x becomes negative.
-            ctx.drawImage(
+            ctxArg.save();
+            ctxArg.scale(-1, 1);
+            ctxArg.drawImage(
                 this.image,
                 this.framesCurrent * frameWidth,
                 0,
@@ -63,9 +68,9 @@ class Fighter {
                 drawWidth,
                 drawHeight
             );
-            ctx.restore();
+            ctxArg.restore();
         } else {
-            ctx.drawImage(
+            ctxArg.drawImage(
                 this.image,
                 this.framesCurrent * frameWidth,
                 0,
@@ -98,11 +103,12 @@ class Fighter {
         this.isAttacking = true;
     }
 
-    update() {
-        this.draw();
-        if (!this.dead){
-            this.framesElapsed++
+    update(ctxArg = ctx) {
+        this.draw(ctxArg);
 
+        this.framesElapsed++;
+
+        if (!this.dead) {
             if (this.framesElapsed % this.framesHold === 0) {
                 if (this.framesCurrent < this.framesMax - 1) {
                     this.framesCurrent++;
@@ -111,15 +117,15 @@ class Fighter {
                 }
             }
         }
+
         if (!this.flip) {
             this.attackBox.position.x = this.position.x + this.baseAttackBoxOffset.x;
         } else {
             this.attackBox.position.x = this.position.x  - this.width + this.baseAttackBoxOffset.x - this.attackBox.width;
         }
         this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
-
         /*
-        ctx.fillRect(
+        ctxArg.fillRect(
             this.attackBox.position.x,
             this.attackBox.position.y,
             this.attackBox.width,
@@ -132,7 +138,6 @@ class Fighter {
 
         if (this.position.y + this.height + this.velocity.y > canvas.height / 1.187) {
             this.velocity.y = 0;
-            //this.position.y = 553;
         } else {
             this.velocity.y += gravity;
         }

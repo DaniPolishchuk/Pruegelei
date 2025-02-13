@@ -1,4 +1,39 @@
-// ===== Canvas Setup =====
+const offscreenCanvas = document.createElement("canvas");
+const offscreenCtx = offscreenCanvas.getContext("2d");
+
+offscreenCanvas.width = 1280;
+offscreenCanvas.height = 720;
+
+function calculateCamera() {
+    const margin = 200;
+    const worldLeft = 0;
+    const worldRight = canvas.width;
+
+    const playerLeft = Math.min(player1.position.x, player2.position.x);
+    const playerRight = Math.max(
+        player1.position.x + player1.width,
+        player2.position.x + player2.width
+    );
+
+    const requiredViewWidth = (playerRight - playerLeft) + 2 * margin;
+    let candidateScale = canvas.width / requiredViewWidth;
+
+    let effectiveScale = Math.max(candidateScale, 1);
+    effectiveScale = effectiveScale > 2 ? 2 : effectiveScale;
+    let desiredCenterX = (playerLeft + playerRight) / 2;
+    const halfViewWidth = (canvas.width / effectiveScale) / 2;
+    desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
+
+    const playerBottom = Math.max(
+        player1.position.y + player1.height,
+        player2.position.y + player2.height
+    );
+    const cameraY = Math.max(player1.position.y + player1.height, player2.position.y + player2.height) + 100;
+
+
+    return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
+}
+
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1280;
@@ -94,33 +129,37 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
 // ===== Main Animation Loop =====
 function animate() {
     window.requestAnimationFrame(animate);
-    ctx.fillStyle = "black";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Update background and players
-    background.update();
-    player1.update();
-    player2.update();
+    const { scale, cameraX, cameraY } = calculateCamera();
+
+    offscreenCtx.fillStyle = "black";
+    offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+
+    offscreenCtx.save();
+
+    offscreenCtx.translate(offscreenCanvas.width / 2, offscreenCanvas.height);
+
+    offscreenCtx.scale(scale, scale);
+
+    offscreenCtx.translate(-cameraX, -cameraY);
+
+    background.update(offscreenCtx);
+    player1.update(offscreenCtx);
+    player2.update(offscreenCtx);
 
     if (player1.position.x < player2.position.x) {
         player1.flip = false;
         player2.flip = true;
     } else {
-        // Otherwise, when the fighters have switched positions:
-        // - player1 should face left (flip = true)
-        // - player2 should face right (flip = false)
         player1.flip = true;
         player2.flip = false;
     }
 
-    // Reset horizontal velocities
     player1.velocity.x = 0;
     player2.velocity.x = 0;
 
-    // ===== Poll Gamepad States =====
     const { gp1State, gp2State } = pollGamepadInputs();
 
-    // ===== Player 1 Movement (Keyboard + Gamepad #1) =====
     updateHorizontalMovement(
         player1,
         keys.a.pressed || gp1State.left,
@@ -136,7 +175,6 @@ function animate() {
         player1.attack();
     }
 
-    // ===== Player 2 Movement (Keyboard + Gamepad #2) =====
     updateHorizontalMovement(
         player2,
         keys.ArrowLeft.pressed || gp2State.left,
@@ -152,20 +190,28 @@ function animate() {
         player2.attack();
     }
 
-    // ===== Collision & Health Management =====
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
 
     if (player2.health <= 0 || player1.health <= 0) {
         determineWinner(player1, player2, timerID);
     }
+
+    offscreenCtx.restore();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(offscreenCanvas, 0, 0, canvas.width, canvas.height);
 }
+
 
 // ===== Game Initialization =====
 async function initializeGame() {
     // Wait for fighter data to load for both players
     await Promise.all([
-        setFighterData(player1, false, "Fantasy Warrior"), // Evil Wizard 2
+        // FIGHTERS:
+        // Fantasy Warrior, Evil Wizard 2, Evil Wizard, Hero Knight, Hero Knight 2, Huntress, Martial Hero
+        // Martial Hero 2, Martial Hero 3, Medieval Warrior, Medieval Warrior 2, Medieval Warrior 3,
+        // Medieval King, Medieval King 2, Wizard
+        setFighterData(player1, false, "Fantasy Warrior"),
         setFighterData(player2, true, "Evil Wizard 2")
     ]);
     // Start the animation loop
