@@ -4,36 +4,6 @@ const offscreenCtx = offscreenCanvas.getContext("2d");
 offscreenCanvas.width = 1280;
 offscreenCanvas.height = 720;
 
-function calculateCamera() {
-    const margin = 200;
-    const worldLeft = 0;
-    const worldRight = canvas.width;
-
-    const playerLeft = Math.min(player1.position.x, player2.position.x);
-    const playerRight = Math.max(
-        player1.position.x + player1.width,
-        player2.position.x + player2.width
-    );
-
-    const requiredViewWidth = (playerRight - playerLeft) + 2 * margin;
-    let candidateScale = canvas.width / requiredViewWidth;
-
-    let effectiveScale = Math.max(candidateScale, 1);
-    effectiveScale = effectiveScale > 2 ? 2 : effectiveScale;
-    let desiredCenterX = (playerLeft + playerRight) / 2;
-    const halfViewWidth = (canvas.width / effectiveScale) / 2;
-    desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
-
-    const playerBottom = Math.max(
-        player1.position.y + player1.height,
-        player2.position.y + player2.height
-    );
-    const cameraY = Math.max(player1.position.y + player1.height, player2.position.y + player2.height) + 100;
-
-
-    return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
-}
-
 const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1280;
@@ -54,7 +24,7 @@ const gravity = 0.5;
 // ===== Background =====
 const background = new Sprite({
     position: { x: 0, y: 0 },
-    imageSrc: "Backgrounds/Background1.png"
+    imageSrc: "../Backgrounds/Background1.png"
 });
 
 // ===== Players =====
@@ -76,10 +46,12 @@ const player2 = new Fighter({
 
 // ===== Keyboard Input Object =====
 const keys = {
+    s: {pressed: false},
     a: {pressed: false},
     d: {pressed: false},
     ArrowLeft: {pressed: false},
-    ArrowRight: {pressed: false}
+    ArrowRight: {pressed: false},
+    ArrowDown: {pressed: false},
 }
 
 
@@ -87,18 +59,90 @@ decreaseTimer();
 
 // ===== Helper Functions =====
 
+function calculateCamera() {
+    const margin = 100;
+    const maxZoom = 1.8;
+    const worldLeft = 0;
+    const worldRight = canvas.width;
+
+    const playerLeft = Math.min(player1.position.x, player2.position.x);
+    const playerRight = Math.max(
+        player1.position.x + player1.width,
+        player2.position.x + player2.width
+    );
+
+    const requiredViewWidth = (playerRight - playerLeft) + 2 * margin;
+    let candidateScale = canvas.width / requiredViewWidth;
+
+    let effectiveScale = Math.max(candidateScale, 1);
+    effectiveScale = effectiveScale > maxZoom ? maxZoom : effectiveScale;
+    let desiredCenterX = (playerLeft + playerRight) / 2;
+    const halfViewWidth = (canvas.width / effectiveScale) / 2;
+    desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
+
+    let cameraY = GROUND_LEVEL + 100;
+
+    return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
+}
+
 // Update horizontal movement (common to both players)
-function updateHorizontalMovement(player, leftPressed, rightPressed, leftKey, rightKey) {
-    if (leftPressed && player.position.x > 0) {
+function updateHorizontalMovement(player, player2, leftPressed, rightPressed, leftKey, rightKey) {
+    let canMoveLeft = leftPressed && player.position.x > 0;
+    let canMoveRight = rightPressed && player.position.x + player.width < canvas.width;
+
+    if(player.hitbox.position.y + player.hitbox.height > player2.hitbox.position.y) {
+        if (player.flip) {
+            canMoveLeft = canMoveLeft && player.hitbox.position.x > player2.hitbox.position.x + player2.hitbox.width;
+        } else {
+            canMoveRight = canMoveRight && player.hitbox.position.x + player.hitbox.width < player2.hitbox.position.x;
+        }
+    }
+
+    if (canMoveLeft) {
         player.velocity.x = -MOVE_SPEED;
         player.lastKey = leftKey;
         player.switchSprite("run");
-    } else if (rightPressed && player.position.x + player.width < canvas.width) {
+    } else if (canMoveRight) {
         player.velocity.x = MOVE_SPEED;
         player.lastKey = rightKey;
         player.switchSprite("run");
     } else {
         player.switchSprite("idle");
+    }
+}
+
+const SLIP_SPEED = 1; // Passe diesen Wert nach Bedarf an
+
+function resolveVerticalCollisionBetweenFighters(fighter, otherFighter) {
+    // Nur prüfen, wenn der Fighter nach unten fällt
+    if (fighter.velocity.y > 0) {
+        // Prüfe, ob sich die beiden horizontal überschneiden
+        if (
+            fighter.hitbox.position.x < otherFighter.hitbox.position.x + otherFighter.hitbox.width &&
+            fighter.hitbox.position.x + fighter.hitbox.width > otherFighter.hitbox.position.x
+        ) {
+            // Prüfe, ob der untere Rand des fallenden Fighters den oberen Bereich des anderen erreicht
+            if (
+                fighter.hitbox.position.y + fighter.hitbox.height > otherFighter.hitbox.position.y &&
+                fighter.hitbox.position.y < otherFighter.hitbox.position.y
+            ) {
+                // Setze den Fighter so, dass er genau auf dem anderen Fighter landet
+                fighter.hitbox.position.y = otherFighter.hitbox.position.y - fighter.hitbox.height;
+                fighter.velocity.y = 0;
+
+                // Berechne die Mittelpunkte beider Fighter
+                const fighterCenter = fighter.hitbox.position.x + fighter.hitbox.width / 2;
+                const otherCenter = otherFighter.hitbox.position.x + otherFighter.hitbox.width / 2;
+
+                // Wenn der Fighter links vom Zentrum des anderen ist, rutsche nach links, sonst nach rechts
+                if (fighterCenter < otherCenter) {
+                    debugger
+                    fighter.velocity.x = -SLIP_SPEED;
+                } else if (fighterCenter > otherCenter) {
+                    fighter.velocity.x = SLIP_SPEED;
+                }
+            }
+        }
     }
 }
 
@@ -147,6 +191,7 @@ function animate() {
     player1.update(offscreenCtx);
     player2.update(offscreenCtx);
 
+
     if (player1.position.x < player2.position.x) {
         player1.flip = false;
         player2.flip = true;
@@ -154,19 +199,23 @@ function animate() {
         player1.flip = true;
         player2.flip = false;
     }
-
     player1.velocity.x = 0;
     player2.velocity.x = 0;
+    resolveVerticalCollisionBetweenFighters(player1, player2);
+    resolveVerticalCollisionBetweenFighters(player2, player1);
 
     const { gp1State, gp2State } = pollGamepadInputs();
 
     updateHorizontalMovement(
         player1,
+        player2,
         keys.a.pressed || gp1State.left,
         keys.d.pressed || gp1State.right,
         "a",
         "d"
     );
+
+
     if (gp1State.jump && player1.position.y + player1.height >= GROUND_LEVEL) {
         player1.velocity.y = -JUMP_VELOCITY;
     }
@@ -177,6 +226,7 @@ function animate() {
 
     updateHorizontalMovement(
         player2,
+        player1,
         keys.ArrowLeft.pressed || gp2State.left,
         keys.ArrowRight.pressed || gp2State.right,
         "ArrowLeft",
@@ -207,12 +257,8 @@ function animate() {
 async function initializeGame() {
     // Wait for fighter data to load for both players
     await Promise.all([
-        // FIGHTERS:
-        // Fantasy Warrior, Evil Wizard 2, Evil Wizard, Hero Knight, Hero Knight 2, Huntress, Martial Hero
-        // Martial Hero 2, Martial Hero 3, Medieval Warrior, Medieval Warrior 2, Medieval Warrior 3,
-        // Medieval King, Medieval King 2, Wizard
-        setFighterData(player1, false, "Fantasy Warrior"),
-        setFighterData(player2, true, "Evil Wizard 2")
+        setFighterData(player1, false, sessionStorage.getItem("player1")),
+        setFighterData(player2, true, sessionStorage.getItem("player2"))
     ]);
     // Start the animation loop
     animate();
@@ -224,6 +270,11 @@ window.addEventListener("keydown", (event) => {
     // --- Player 1 Controls ---
     if (!player1.dead) {
         switch (event.key) {
+            case "s":
+                keys.s.pressed = true;
+                player1.lastKey = "s";
+                player1.isBlocking = true;
+                break;
             case "d":
                 keys.d.pressed = true;
                 player1.lastKey = "d";
@@ -266,6 +317,11 @@ window.addEventListener("keydown", (event) => {
     // --- Player 2 Controls ---
     if (!player2.dead) {
         switch (event.key) {
+            case "ArrowDown":
+                keys.ArrowDown.pressed = true;
+                player2.lastKey = "ArrowDown";
+                player2.isBlocking = true;
+                break;
             case "ArrowLeft":
                 keys.ArrowLeft.pressed = true;
                 player2.lastKey = "ArrowLeft";
@@ -309,11 +365,19 @@ window.addEventListener("keydown", (event) => {
 
 window.addEventListener("keyup", (event) => {
     switch (event.key) {
+        case "s":
+            keys.s.pressed = false;
+            player1.isBlocking = false;
+            break;
         case "d":
             keys.d.pressed = false;
             break;
         case "a":
             keys.a.pressed = false;
+            break;
+        case "ArrowDown":
+            keys.ArrowDown.pressed = false;
+            player2.isBlocking = false;
             break;
         case "ArrowLeft":
             keys.ArrowLeft.pressed = false;

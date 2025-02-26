@@ -16,6 +16,14 @@ function bufferToBase64(buffer) {
     return `data:image/png;base64,${buffer.toString('base64')}`;
 }
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'FighterSelection/fighterSelection.html'));
+});
+
+app.get('/fight', (req, res) => {
+    res.sendFile(path.join(__dirname, 'Fight/fight.html'));
+});
+
 app.get('/fighters', (req, res) => {
     const fighters = db.prepare("SELECT * FROM Fighters").all();
 
@@ -55,11 +63,6 @@ app.get('/fighters', (req, res) => {
     });
 
     res.json(fighters);
-});
-
-// Serve `index.html` when visiting the root URL `/`
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // Start the server

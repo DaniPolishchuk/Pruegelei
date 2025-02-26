@@ -10,31 +10,6 @@ function rectangularCollision(fighter1, fighter2) {
     );
 }
 
-function collisionLeft(player1, player2) {
-    if(player1.position.x < player2.position.x + player2.width) {
-        return (
-            player1.position.x + player1.width < player2.position.x ||
-            player1.position.y + player1.height < player2.position.y ||
-            player1.position.y > player2.position.y + player2.height
-        )
-    } else {
-        return true;
-    }
-}
-
-function collisionRight(player1, player2) {
-    if(player1.position.x > player2.position.x) {
-        return (
-            player1.position.x > player2.position.x + player2.width ||
-            player1.position.y + player1.height < player2.position.y ||
-            player1.position.y > player2.position.y + player2.height
-        )
-    } else {
-        return true;
-    }
-}
-
-
 function determineWinner(player1, player2, timerId) {
     clearTimeout(timerId);
     const gameResultEl = document.querySelector("#gameResult");
@@ -166,5 +141,3 @@ async function setFighterData(player, flip, fighterName) {
         console.error("Error fetching fighter data:", error);
     }
 }
-
-

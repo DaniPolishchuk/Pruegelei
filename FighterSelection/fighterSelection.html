@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Game</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/FighterSelection/styles.css">
+</head>
+<body>
+<div id="mainMenu">
+    <div id="gameTitle">PRÜGELEI</div>
+    <div id="fighterSelection">
+        <div id="fighter1">Player 1
+            <canvas id="player1canvas"></canvas>
+        </div>
+        <div id="availableFighters"></div>
+        <div id="fighter2">Player 2
+            <canvas id="player2canvas"></canvas>
+        </div>
+    </div>
+    <div id="readyButtons">
+        <button id="readyButton1" class="readyButton">Ready</button>
+        <button id="startButton">!!! LASS UNS PRÜGELN !!!</button>
+        <button id="readyButton2" class="readyButton">Ready</button>
+    </div>
+</div>
+<script type="module" src="/FighterSelection/index.js"></script>
+</body>
+</html>
