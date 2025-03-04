@@ -95,6 +95,7 @@ async function setFighterData(player, flip, fighterName) {
         // Helper to create an attack box for a given attack type using the base offset.
         const createAttackBox = (attackKey) => {
             const attackBoxWidth = fighter[attackKey + "Width"];
+            const attackBoxHeight = fighter[attackKey + "Height"];
             const offsetX = flip
                 ? player.width - baseAttackBoxOffset.x - attackBoxWidth
                 : baseAttackBoxOffset.x;
@@ -102,7 +103,7 @@ async function setFighterData(player, flip, fighterName) {
                 position: { x: player.position.x, y: player.position.y },
                 offset: { x: offsetX, y: baseAttackBoxOffset.y },
                 width: attackBoxWidth,
-                height: fighter[attackKey + "Height"],
+                height: attackBoxHeight,
             };
         };
 
@@ -140,4 +141,8 @@ async function setFighterData(player, flip, fighterName) {
     } catch (error) {
         console.error("Error fetching fighter data:", error);
     }
+}
+
+function determineDamage(){
+
 }

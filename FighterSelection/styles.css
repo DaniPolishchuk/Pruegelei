@@ -6,8 +6,6 @@
 
 body {
     text-align: center;
-    background-image: url("../Backgrounds/FlameBorder.jpg");
-    background-size: cover;
 }
 
 #mainMenu {
@@ -58,7 +56,7 @@ body {
 }
 
 #availableFighters {
-    width: 302px;
+    width: 410px;
     height: 509px;
     display: flex;
     flex-wrap: wrap;
@@ -68,8 +66,8 @@ body {
 
 .fighter {
     border: none;
-    width: 100px;
-    height: 100px;
+    width: 80px;
+    height: 80px;
     background-color: transparent;
     cursor: pointer;
     display: flex;
@@ -111,6 +109,18 @@ body {
     flex-direction: row;
     align-items: center;
     justify-content: space-evenly;
+}
+
+.video-container video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: -1;
 }
 
 .readyButton {

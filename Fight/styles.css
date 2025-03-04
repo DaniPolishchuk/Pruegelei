@@ -6,9 +6,20 @@
 }
 body {
     text-align: center;
-    background-image: url("../Backgrounds/LightningBorder.png");
-    background-size: cover;
 }
+
+.video-container video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: -1;
+}
+
 /* Wrapper Container */
 #gameContainer {
     position: relative;
