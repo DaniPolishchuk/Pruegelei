@@ -1,12 +1,20 @@
 function rectangularCollision(fighter1, fighter2) {
-    const { position: pos1, width: boxWidth } = fighter1.attackBox;
+    const { position: pos1, width: boxWidth, height: boxHeight } = fighter1.attackBox;
+    const left1 = pos1.x;
     const right1 = pos1.x + boxWidth;
-    const pos2x = fighter2.position.x;
-    const fighter2Width = fighter2.width;
+    const top1 = Math.min(pos1.y, pos1.y + boxHeight);
+    const bottom1 = Math.max(pos1.y, pos1.y + boxHeight);
+
+    const left2 = fighter2.position.x;
+    const right2 = fighter2.position.x + fighter2.width;
+    const top2 = fighter2.position.y;
+    const bottom2 = fighter2.position.y + fighter2.height;
 
     return (
-        right1 >= pos2x - fighter2Width &&
-        pos1.x <= pos2x + fighter2Width
+        right1 >= left2 &&
+        left1 <= right2 &&
+        bottom1 >= top2 &&
+        top1 <= bottom2
     );
 }
 
@@ -22,7 +30,6 @@ function determineWinner(player1, player2, timerId) {
         gameResultEl.textContent = "Tie";
     }
     // Reload page after 3 seconds.
-    setTimeout(() => location.reload(), 3000);
 }
 
 // ===== Timer Functions =====
@@ -69,11 +76,11 @@ async function setFighterData(player, flip, fighterName) {
         player.scale = fighter.Scale;
         player.image.src = fighter.Idle;
         player.framesMax = fighter.IdleFrames;
-        player.offset = { x: fighter.OffsetX, y: fighter.OffsetY };
+        player.offset = {x: fighter.OffsetX, y: fighter.OffsetY};
         player.flip = flip;
 
         // Define and store the base attack box offset (assumes fighter is facing right).
-        const baseAttackBoxOffset = { x: fighter.AttackBoxOffsetX, y: fighter.AttackBoxOffsetY };
+        const baseAttackBoxOffset = {x: fighter.AttackBoxOffsetX, y: fighter.AttackBoxOffsetY};
         player.baseAttackBoxOffset = baseAttackBoxOffset;
 
         // Compute the attack box offset for the primary attack.
@@ -85,8 +92,8 @@ async function setFighterData(player, flip, fighterName) {
             : baseAttackBoxOffset.x;
 
         player.attackBox = {
-            position: { x: player.position.x, y: player.position.y },
-            offset: { x: attackBoxOffsetX, y: baseAttackBoxOffset.y },
+            position: {x: player.position.x, y: player.position.y},
+            offset: {x: attackBoxOffsetX, y: baseAttackBoxOffset.y},
             width: attackBoxWidth,
             height: fighter.Attack1Height,
         };
@@ -100,8 +107,8 @@ async function setFighterData(player, flip, fighterName) {
                 ? player.width - baseAttackBoxOffset.x - attackBoxWidth
                 : baseAttackBoxOffset.x;
             return {
-                position: { x: player.position.x, y: player.position.y },
-                offset: { x: offsetX, y: baseAttackBoxOffset.y },
+                position: {x: player.position.x, y: player.position.y},
+                offset: {x: offsetX, y: baseAttackBoxOffset.y},
                 width: attackBoxWidth,
                 height: attackBoxHeight,
             };
@@ -109,16 +116,16 @@ async function setFighterData(player, flip, fighterName) {
 
         // Mapping of sprite keys to fighter property keys.
         const spriteMapping = {
-            idle:    { srcKey: "Idle",    framesKey: "IdleFrames" },
-            run:     { srcKey: "Run",     framesKey: "RunFrames" },
-            jump:    { srcKey: "Jump",    framesKey: "JumpFrames" },
-            fall:    { srcKey: "Fall",    framesKey: "FallFrames" },
-            attack1: { srcKey: "Attack1", framesKey: "Attack1Frames", hasAttackBox: true },
-            attack2: { srcKey: "Attack2", framesKey: "Attack2Frames", hasAttackBox: true },
-            attack3: { srcKey: "Attack3", framesKey: "Attack3Frames", hasAttackBox: true },
-            attack4: { srcKey: "Attack4", framesKey: "Attack4Frames", hasAttackBox: true },
-            takeHit: { srcKey: "TakeHit", framesKey: "TakeHitFrames" },
-            death:   { srcKey: "Death",   framesKey: "DeathFrames" },
+            idle: {srcKey: "Idle", framesKey: "IdleFrames"},
+            run: {srcKey: "Run", framesKey: "RunFrames"},
+            jump: {srcKey: "Jump", framesKey: "JumpFrames"},
+            fall: {srcKey: "Fall", framesKey: "FallFrames"},
+            attack1: {srcKey: "Attack1", framesKey: "Attack1Frames", hasAttackBox: true},
+            attack2: {srcKey: "Attack2", framesKey: "Attack2Frames", hasAttackBox: true},
+            attack3: {srcKey: "Attack3", framesKey: "Attack3Frames", hasAttackBox: true},
+            attack4: {srcKey: "Attack4", framesKey: "Attack4Frames", hasAttackBox: true},
+            takeHit: {srcKey: "TakeHit", framesKey: "TakeHitFrames"},
+            death: {srcKey: "Death", framesKey: "DeathFrames"},
         };
 
         player.sprites = {};
@@ -143,6 +150,41 @@ async function setFighterData(player, flip, fighterName) {
     }
 }
 
-function determineDamage(){
+async function getAvgAttackSurface() {
+    const fighters = await getFighters();
+    let totalSurface = 0;
+    let count = 0;
 
+    const addAttack = (height, width) => {
+        totalSurface += Math.abs(height) * width;
+        count++;
+    };
+
+    fighters.forEach(fighter => {
+        addAttack(fighter.Attack1Height, fighter.Attack1Width);
+
+        if (fighter.Attack2 !== fighter.Attack1) {
+            addAttack(fighter.Attack2Height, fighter.Attack2Width);
+        }
+        if (fighter.Attack3 !== fighter.Attack2) {
+            addAttack(fighter.Attack3Height, fighter.Attack3Width);
+        }
+        if (fighter.Attack4 !== fighter.Attack3) {
+            addAttack(fighter.Attack4Height, fighter.Attack4Width);
+        }
+    });
+
+    return count ? totalSurface / count : 0;
+}
+
+async function determineDamage(player) {
+    const avgAttackSurface = await getAvgAttackSurface();
+    console.log(avgAttackSurface);
+    if (avgAttackSurface === 0) {
+        player.damage = 0;
+        return;
+    }
+    const playerAttackSurface = player.attackBox.width * Math.abs(player.attackBox.height);
+    const surfaceDifference = playerAttackSurface / avgAttackSurface;
+    player.damage = 5 / surfaceDifference;
 }

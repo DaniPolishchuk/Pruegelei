@@ -159,7 +159,7 @@ function updateVerticalSprite(player) {
 function processAttackCollision(attacker, defender, defenderHealthBar) {
     if (rectangularCollision(attacker, defender)) {
         if (attacker.isAttacking && attacker.framesCurrent >= attacker.attackFrames / 2) {
-            defender.takeHit();
+            defender.takeHit(attacker.damage);
             attacker.isAttacking = false;
             defenderHealthBar.style.width = defender.health + "%";
         }
@@ -264,6 +264,8 @@ async function initializeGame() {
     animate();
 }
 initializeGame();
+determineDamage(player1);
+determineDamage(player2);
 
 // ===== Keyboard Event Listeners =====
 window.addEventListener("keydown", (event) => {
@@ -292,24 +294,28 @@ window.addEventListener("keydown", (event) => {
                 player1.attackStyle = "style1";
                 player1.attackBox = player1.sprites.attack1.attackBox;
                 player1.attackFrames = player1.sprites.attack1.framesMax;
+                determineDamage(player1);
                 player1.attack();
                 break;
             case "2":
                 player1.attackStyle = "style2";
                 player1.attackBox = player1.sprites.attack2.attackBox;
                 player1.attackFrames = player1.sprites.attack2.framesMax;
+                determineDamage(player1);
                 player1.attack();
                 break;
             case "3":
                 player1.attackStyle = "style3";
                 player1.attackBox = player1.sprites.attack3.attackBox;
                 player1.attackFrames = player1.sprites.attack3.framesMax;
+                determineDamage(player1);
                 player1.attack();
                 break;
             case "4":
                 player1.attackStyle = "style4";
                 player1.attackBox = player1.sprites.attack4.attackBox;
                 player1.attackFrames = player1.sprites.attack4.framesMax;
+                determineDamage(player1);
                 player1.attack();
                 break;
         }
@@ -339,24 +345,28 @@ window.addEventListener("keydown", (event) => {
                 player2.attackStyle = "style1";
                 player2.attackBox = player2.sprites.attack1.attackBox;
                 player2.attackFrames = player2.sprites.attack1.framesMax;
+                determineDamage(player2);
                 player2.attack();
                 break;
             case "9":
                 player2.attackStyle = "style2";
                 player2.attackBox = player2.sprites.attack2.attackBox;
                 player2.attackFrames = player2.sprites.attack2.framesMax;
-                player2.attack();
+                determineDamage(player2);
+                player2.attack()
                 break;
             case "8":
                 player2.attackStyle = "style3";
                 player2.attackBox = player2.sprites.attack3.attackBox;
                 player2.attackFrames = player2.sprites.attack3.framesMax;
+                determineDamage(player2);
                 player2.attack();
                 break;
             case "7":
                 player2.attackStyle = "style4";
                 player2.attackBox = player2.sprites.attack4.attackBox;
                 player2.attackFrames = player2.sprites.attack4.framesMax;
+                determineDamage(player2)
                 player2.attack();
                 break;
         }

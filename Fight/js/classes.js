@@ -38,6 +38,8 @@ class Fighter {
         this.velocity = velocity;
         this.width = canvas.width / 23;
         this.height = canvas.height / 5;
+        this.baseAttackBoxOffset;
+        this.damage = 5;
         this.lastKey;
         this.attackStyle = "style1";
         this.offset;
@@ -189,9 +191,9 @@ class Fighter {
         }
     }
 
-    takeHit() {
+    takeHit(damage) {
         if(!this.isBlocking){
-            this.health -= 10;
+            this.health -= damage;
             if (this.health <= 0) {
                 this.switchSprite("death");
             } else {
