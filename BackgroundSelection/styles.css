@@ -1,0 +1,100 @@
+* {
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+}
+
+body {
+    text-align: center;
+}
+
+#mainMenu {
+    width: 1280px;
+    height: 720px;
+    flex-direction: column;
+    position: relative;
+    display: inline-block;
+    margin: 0 auto;
+    border: 1px solid orange;
+}
+
+#gameTitle {
+    background-color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 110px;
+    font-size: 64px;
+    color: orange;
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
+}
+
+#pickedBackgroundAndFighters {
+    background-color: black;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 306px;
+}
+
+#pickedBackground {
+    width: 650px;
+    height: 290px;
+}
+
+#pickedBackgroundImage {
+    border: 1px solid orange;
+    width: 650px;
+    height: 290px;
+}
+
+#player1canvas {
+    width: 290px;
+    height: 290px;
+}
+
+#player2canvas {
+    width: 290px;
+    height: 290px;
+}
+
+#backgrounds {
+    background-color: black;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    height: 304px;
+}
+
+.backgroundImage {
+    width: 212px;
+    height: 148px;
+    border: 1px solid orange;
+}
+
+.video-container video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: -1;
+}
+
+.temp-brightness {
+    animation: brightnessToNormal 0.15s forwards;
+}
+
+@keyframes brightnessToNormal {
+    from {
+        filter: brightness(300%);
+    }
+    to {
+        filter: brightness(100%);
+    }
+}

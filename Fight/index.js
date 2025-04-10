@@ -8,11 +8,36 @@ const canvas = document.querySelector("canvas");
 const ctx = canvas.getContext("2d");
 canvas.width = 1280;
 canvas.height = 720;
-
 // ===== Precompute Constants =====
 const MOVE_SPEED = canvas.width / 275;
 const JUMP_VELOCITY = canvas.height / 45;
-const GROUND_LEVEL = canvas.height / 1.187; // for jump ground check
+
+let groundLvl, background;
+
+async function setUpGame() {
+
+    const { imageSrc, groundLevel, borderBackground } = await setBackground(sessionStorage.getItem("background"));
+
+    // Setup video
+    const videoSource = document.getElementById('videoSource');
+    const videoElement = document.getElementById('borderBackground');
+
+    videoSource.src = borderBackground;
+    videoElement.load();
+
+    groundLvl = groundLevel;
+    background = new Sprite({
+        position: { x: 0, y: 0},
+        imageSrc: imageSrc,
+        width: canvas.width,
+        height: canvas.height
+    });
+
+    await initializeGame(); // wait until fighters are ready
+    requestAnimationFrame(animate); // only now start animating
+}
+
+setUpGame();
 
 // ===== Cache DOM Elements =====
 const player1HealthBar = document.querySelector("#player1Health");
@@ -20,12 +45,6 @@ const player2HealthBar = document.querySelector("#player2Health");
 
 // ===== Global Constants =====
 const gravity = 0.5;
-
-// ===== Background =====
-const background = new Sprite({
-    position: { x: 0, y: 0 },
-    imageSrc: "../Backgrounds/Background1.png"
-});
 
 // ===== Players =====
 const player1 = new Fighter({
@@ -80,9 +99,7 @@ function calculateCamera() {
     const halfViewWidth = (canvas.width / effectiveScale) / 2;
     desiredCenterX = Math.max(worldLeft + halfViewWidth, Math.min(desiredCenterX, worldRight - halfViewWidth));
 
-    let cameraY = GROUND_LEVEL + 100;
-
-    return { scale: effectiveScale, cameraX: desiredCenterX, cameraY: cameraY };
+    return { scale: effectiveScale, cameraX: desiredCenterX};
 }
 
 // Update horizontal movement (common to both players)
@@ -174,7 +191,7 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
 function animate() {
     window.requestAnimationFrame(animate);
 
-    const { scale, cameraX, cameraY } = calculateCamera();
+    const { scale, cameraX} = calculateCamera();
 
     offscreenCtx.fillStyle = "black";
     offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
@@ -185,9 +202,12 @@ function animate() {
 
     offscreenCtx.scale(scale, scale);
 
-    offscreenCtx.translate(-cameraX, -cameraY);
+    offscreenCtx.translate(-cameraX, -canvas.height);
 
-    background.update(offscreenCtx);
+    if (background) {
+        background.draw(offscreenCtx);
+    }
+
     player1.update(offscreenCtx);
     player2.update(offscreenCtx);
 
@@ -216,7 +236,7 @@ function animate() {
     );
 
 
-    if (gp1State.jump && player1.position.y + player1.height >= GROUND_LEVEL) {
+    if (gp1State.jump && player1.position.y + player1.height >= groundLvl) {
         player1.velocity.y = -JUMP_VELOCITY;
     }
     updateVerticalSprite(player1);
@@ -232,7 +252,7 @@ function animate() {
         "ArrowLeft",
         "ArrowRight"
     );
-    if (gp2State.jump && player2.position.y + player2.height >= GROUND_LEVEL) {
+    if (gp2State.jump && player2.position.y + player2.height >= groundLvl) {
         player2.velocity.y = -JUMP_VELOCITY;
     }
     updateVerticalSprite(player2);
@@ -263,7 +283,6 @@ async function initializeGame() {
     // Start the animation loop
     animate();
 }
-initializeGame();
 determineDamage(player1);
 determineDamage(player2);
 
@@ -286,7 +305,8 @@ window.addEventListener("keydown", (event) => {
                 player1.lastKey = "a";
                 break;
             case "w":
-                if (player1.position.y + player1.height >= GROUND_LEVEL) {
+                console.log(player1.position.y + player1.height, groundLvl);
+                if (player1.position.y + player1.height >= groundLvl) {
                     player1.velocity.y = -JUMP_VELOCITY;
                 }
                 break;
@@ -337,7 +357,7 @@ window.addEventListener("keydown", (event) => {
                 player2.lastKey = "ArrowRight";
                 break;
             case "ArrowUp":
-                if (player2.position.y + player2.height >= GROUND_LEVEL) {
+                if (player2.position.y + player2.height >= groundLvl) {
                     player2.velocity.y = -JUMP_VELOCITY;
                 }
                 break;

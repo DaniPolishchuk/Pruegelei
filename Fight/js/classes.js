@@ -1,14 +1,20 @@
 class Sprite {
-    constructor({position, imageSrc, width =  canvas.width, height = canvas.height, scale = 1}) {
+    constructor({position, imageSrc, width = canvas.width, height = canvas.height, scale = 1}) {
         this.position = position;
         this.width = width;
         this.height = height;
         this.image = new Image();
-        this.image.src = imageSrc;
+        this.imageLoaded = false;
         this.scale = scale;
+        this.image.onload = () => {
+            this.imageLoaded = true;
+        };
+
+        this.image.src = imageSrc;
     }
 
     draw(ctxArg = ctx) {
+        if (!this.imageLoaded) return;
         ctxArg.drawImage(
             this.image,
             this.position.x,
@@ -31,7 +37,7 @@ class Fighter {
         this.framesMax;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
-        this.framesHold = 5;
+        this.framesHold = 7;
         this.attackBox;
         this.isBlocking = false;
         this.attackFrames;
@@ -49,22 +55,22 @@ class Fighter {
         this.flip;
         this.dead = false;
         this.hitbox = {
-            position : {
-                x : this.position.x,
-                y : this.position.y,
+            position: {
+                x: this.position.x,
+                y: this.position.y,
             },
             width: 100,
             height: this.height,
         };
         this.shield = new Sprite({
-            position : {
-                x : this.position.x,
-                y : this.position.y,
+            position: {
+                x: this.position.x,
+                y: this.position.y,
             },
-            imageSrc : "../Assets/Shield.png",
-            width : 100,
-            height : 100,
-            scale : 2,
+            imageSrc: "../Assets/Shield.png",
+            width: 100,
+            height: 100,
+            scale: 2,
         });
     }
 
@@ -107,7 +113,7 @@ class Fighter {
 
 
     attack() {
-        if(!this.isBlocking) {
+        if (!this.isBlocking) {
             switch (this.attackStyle) {
                 case "style1":
                     this.switchSprite("attack1", "style1");
@@ -146,7 +152,7 @@ class Fighter {
         if (!this.flip) {
             this.attackBox.position.x = this.position.x + this.baseAttackBoxOffset.x;
         } else {
-            this.attackBox.position.x = this.position.x  - this.width + this.baseAttackBoxOffset.x - this.attackBox.width;
+            this.attackBox.position.x = this.position.x - this.width + this.baseAttackBoxOffset.x - this.attackBox.width;
         }
         this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
 
@@ -160,31 +166,30 @@ class Fighter {
             this.attackBox.position.x,
             this.attackBox.position.y,
             this.attackBox.width,
-            this.attackBox.height);
+            this.attackBox.height);4
          */
-        if(this.isBlocking) {
+        if (this.isBlocking) {
 
             this.image = this.sprites.idle.image;
             this.framesMax = this.sprites.idle.framesMax;
 
             let playerMiddle = (this.position.x + this.position.x + this.width) / 2;
             this.shield.position = {
-                x : this.flip ? playerMiddle - this.shield.width / 2 - 30 : this.position.x - 50,
-                y : this.position.y,
+                x: this.flip ? playerMiddle - this.shield.width / 2 - 30 : this.position.x - 50,
+                y: this.position.y,
             };
             this.shield.draw(ctxArg);
             this.switchSprite("idle");
-            if(this.velocity.y > 0){
+            if (this.velocity.y > 0) {
                 this.position.y += this.velocity.y;
             }
-        }else{
+        } else {
             this.position.x += this.velocity.x;
             this.position.y += this.velocity.y;
 
         }
 
-
-        if (this.position.y + this.height + this.velocity.y > canvas.height / 1.187) {
+        if (this.position.y + this.height + this.velocity.y > groundLvl) {
             this.velocity.y = 0;
         } else {
             this.velocity.y += gravity;
@@ -192,7 +197,7 @@ class Fighter {
     }
 
     takeHit(damage) {
-        if(!this.isBlocking){
+        if (!this.isBlocking) {
             this.health -= damage;
             if (this.health <= 0) {
                 this.switchSprite("death");
@@ -235,7 +240,7 @@ class Fighter {
         if (this.image === this.sprites.takeHit.image && this.framesCurrent < this.sprites.takeHit.framesMax - 1) {
             return;
         }
-        if(!this.isBlocking) {
+        if (!this.isBlocking) {
             switch (sprite) {
                 case 'idle':
                     if (this.image !== this.sprites.idle.image) {

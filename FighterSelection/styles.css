@@ -26,8 +26,7 @@ body {
     height: 110px;
     font-size: 64px;
     color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
-
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
 }
 
 #fighterSelection {
@@ -45,7 +44,7 @@ body {
     height: 500px;
     font-size: 30px;
     color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
     display: flex;
     flex-direction: column;
 }
@@ -90,7 +89,7 @@ body {
 #fighter2 {
     font-size: 30px;
     color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
     width: 400px;
     height: 500px;
     display: flex;
@@ -132,7 +131,7 @@ body {
     height: 50px;
     background-color: black;
     color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
 }
 
 .readyButton:hover {
@@ -149,7 +148,7 @@ body {
     height: 50px;
     background-color: black;
     color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
+    text-shadow: 2px 2px 0 yellow, 4px 4px 0 red;
 }
 
 #startButton:hover {

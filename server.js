@@ -20,6 +20,10 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'FighterSelection/fighterSelection.html'));
 });
 
+app.get('/background', (req, res) => {
+    res.sendFile(path.join(__dirname, 'BackgroundSelection/backgroundSelection.html'));
+});
+
 app.get('/fight', (req, res) => {
     res.sendFile(path.join(__dirname, 'Fight/fight.html'));
 });
@@ -63,6 +67,35 @@ app.get('/fighters', (req, res) => {
     });
 
     res.json(fighters);
+});
+
+app.get('/backgrounds', (req, res) => {
+    const backgrounds = db.prepare("SELECT * FROM Backgrounds").all();
+
+    backgrounds.forEach(background => {
+        if (background.BackgroundImage) background.BackgroundImage = bufferToBase64(background.BackgroundImage);
+        if (background.BorderBackground) background.BorderBackground = `/backgrounds/${encodeURIComponent(background.Name)}/video`;
+    });
+
+    res.json(backgrounds);
+});
+
+app.get('/backgrounds/:name/video', (req, res) => {
+    const name = req.params.name;
+
+    const row = db.prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?").get(name);
+    if (!row || !row.BorderBackground) {
+        return res.status(404).send("Video not found for background: " + name);
+    }
+
+    const buffer = row.BorderBackground;
+
+    res.writeHead(200, {
+        'Content-Type': 'video/mp4',
+        'Content-Length': buffer.length
+    });
+
+    res.end(buffer);
 });
 
 // Start the server

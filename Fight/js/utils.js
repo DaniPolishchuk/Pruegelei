@@ -61,6 +61,19 @@ async function getFighters() {
     }
 }
 
+async function getBackgrounds() {
+    try {
+        const response = await fetch("http://127.0.0.1:5001/backgrounds");
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching backgrounds:", error);
+        return [];
+    }
+}
+
 // ===== Fighter Data Setup =====
 async function setFighterData(player, flip, fighterName) {
     try {
@@ -179,7 +192,6 @@ async function getAvgAttackSurface() {
 
 async function determineDamage(player) {
     const avgAttackSurface = await getAvgAttackSurface();
-    console.log(avgAttackSurface);
     if (avgAttackSurface === 0) {
         player.damage = 0;
         return;
@@ -188,3 +200,18 @@ async function determineDamage(player) {
     const surfaceDifference = playerAttackSurface / avgAttackSurface;
     player.damage = 5 / surfaceDifference;
 }
+
+async function setBackground(bgName) {
+    const backgrounds = await getBackgrounds();
+
+    const background = backgrounds.find(f => f.Name === bgName);
+
+    return {
+        imageSrc: background.BackgroundImage,
+        groundLevel: 720 / background.GroundLevel,
+        borderBackground: background.BorderBackground
+    };
+}
+
+
+
