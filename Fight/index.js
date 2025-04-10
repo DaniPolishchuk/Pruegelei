@@ -425,11 +425,13 @@ function pollGamepadInputs() {
 
     // Helper to create a basic gamepad state
     const createGamepadState = (gp) => ({
-        left: gp.axes[0] < -threshold,
-        right: gp.axes[0] > threshold,
-        jump: gp.axes[1] < -threshold,
+        left: gp.axes[0] < -threshold || gp.buttons[14].pressed,
+        right: gp.axes[0] > threshold || gp.buttons[15].pressed,
+        jump: gp.axes[1] < -threshold || gp.buttons[12].pressed,
         attack: false,
-        attackStyle: null
+        attackStyle: null,
+        block: gp.buttons[0].pressed || gp.buttons[1].pressed ||
+            gp.buttons[2].pressed || gp.buttons[3].pressed
     });
 
     // Player 1
@@ -457,8 +459,8 @@ function pollGamepadInputs() {
                 break;
             }
         }
+        player1.isBlocking = gp1State.block;
     }
-
     // Process gamepad 2 buttons
     if (gp2State && gamepads[1]) {
         const gp2 = gamepads[1];
@@ -471,6 +473,7 @@ function pollGamepadInputs() {
                 break;
             }
         }
+        player2.isBlocking = gp2State.block;
     }
 
     return { gp1State, gp2State };
