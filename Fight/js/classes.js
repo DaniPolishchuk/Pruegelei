@@ -30,29 +30,23 @@ class Sprite {
 }
 
 class Fighter {
+    baseAttackBoxOffset;
+    offset;
+    sprites;
     constructor({position, velocity}) {
         this.position = position;
         this.image = new Image();
         this.scale = 1;
-        this.framesMax;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
         this.framesHold = 7;
-        this.attackBox;
         this.isBlocking = false;
-        this.attackFrames;
         this.velocity = velocity;
         this.width = canvas.width / 23;
         this.height = canvas.height / 5;
-        this.baseAttackBoxOffset;
         this.damage = 5;
-        this.lastKey;
         this.attackStyle = "style1";
-        this.offset;
-        this.sprites;
-        this.isAttacking = false;
         this.health = 100;
-        this.flip;
         this.dead = false;
         this.hitbox = {
             position: {
@@ -215,7 +209,6 @@ class Fighter {
             }
             return;
         }
-
         // override animations with attack animations
         switch (this.attackStyle) {
             case "style1":

@@ -1,5 +1,5 @@
 function rectangularCollision(fighter1, fighter2) {
-    const { position: pos1, width: boxWidth, height: boxHeight } = fighter1.attackBox;
+    const {position: pos1, width: boxWidth, height: boxHeight} = fighter1.attackBox;
     const left1 = pos1.x;
     const right1 = pos1.x + boxWidth;
     const top1 = Math.min(pos1.y, pos1.y + boxHeight);

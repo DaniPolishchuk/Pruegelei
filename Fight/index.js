@@ -178,7 +178,7 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
         if (attacker.isAttacking && attacker.framesCurrent >= attacker.attackFrames / 2) {
             defender.takeHit(attacker.damage);
             attacker.isAttacking = false;
-            defenderHealthBar.style.width = defender.health + "%";
+            defenderHealthBar.style.width = Math.max(defender.health, 0) + "%";
         }
     }
     // Reset attack flag if necessary
@@ -186,6 +186,9 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
         attacker.isAttacking = false;
     }
 }
+
+let prevGp1Attack = false;
+let prevGp2Attack = false;
 
 // ===== Main Animation Loop =====
 function animate() {
@@ -235,14 +238,14 @@ function animate() {
         "d"
     );
 
-
     if (gp1State.jump && player1.position.y + player1.height >= groundLvl) {
         player1.velocity.y = -JUMP_VELOCITY;
     }
     updateVerticalSprite(player1);
-    if (gp1State.attack) {
+    if (gp1State.attack && !prevGp1Attack) {
         player1.attack();
     }
+    prevGp1Attack = gp1State.attack;
 
     updateHorizontalMovement(
         player2,
@@ -256,9 +259,10 @@ function animate() {
         player2.velocity.y = -JUMP_VELOCITY;
     }
     updateVerticalSprite(player2);
-    if (gp2State.attack) {
+    if (gp2State.attack && !prevGp2Attack) {
         player2.attack();
     }
+    prevGp2Attack = gp2State.attack;
 
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
@@ -288,6 +292,7 @@ determineDamage(player2);
 
 // ===== Keyboard Event Listeners =====
 window.addEventListener("keydown", (event) => {
+    if (event.repeat) return;
     // --- Player 1 Controls ---
     if (!player1.dead) {
         switch (event.key) {
