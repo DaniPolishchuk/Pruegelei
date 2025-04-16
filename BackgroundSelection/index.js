@@ -1,127 +1,170 @@
-import {player1, player2} from "../FighterSelection/index.js";
-//import { getBackgrounds, getFighters } from "../Fight/js/utils.js";
+// BackgroundSelection/index.js
 
-const bgs = document.getElementById("backgrounds");
+// --- MiniFighter class (same as in FighterSelection) ---
+class MiniFighter {
+    constructor(canvas, src, scale, framesMax, offset) {
+        this.canvas = canvas;
+        this.ctx = canvas.getContext('2d');
+        this.img = new Image();
+        this.loaded = false;
+        this.img.onload = () => (this.loaded = true);
 
-async function getFighters() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/fighters");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching fighters:", error);
-        return [];
+        this.scale = scale || 1;
+        this.framesMax = framesMax || 1;
+        this.current = 0;
+        this.elapsed = 0;
+        this.hold = 4;
+        this.offset = offset || { x: 0, y: 0 };
+        this.flipped = false;
+
+        if (src) this.img.src = src;
     }
+
+    draw() {
+        if (!this.loaded) return;
+        const fw = this.img.width / this.framesMax;
+        const dw = fw * this.scale;
+        const dh = this.img.height * this.scale;
+        const dx = -this.offset.x, dy = -this.offset.y;
+
+        if (this.flipped) {
+            this.ctx.save();
+            this.ctx.scale(-1, 1);
+            this.ctx.drawImage(
+                this.img,
+                this.current * fw, 0, fw, this.img.height,
+                -(dx + dw), dy, dw, dh
+            );
+            this.ctx.restore();
+        } else {
+            this.ctx.drawImage(
+                this.img,
+                this.current * fw, 0, fw, this.img.height,
+                dx, dy, dw, dh
+            );
+        }
+    }
+
+    update() {
+        this.draw();
+        this.elapsed++;
+        if (this.elapsed % this.hold === 0) {
+            this.current = (this.current + 1) % this.framesMax;
+        }
+    }
+}
+
+// --- Canvas setup for the two fighters ---
+const p1c = document.getElementById("player1canvas");
+p1c.width = p1c.offsetWidth;
+p1c.height = p1c.offsetHeight;
+const player1 = new MiniFighter(p1c, null);
+
+const p2c = document.getElementById("player2canvas");
+p2c.width = p2c.offsetWidth;
+p2c.height = p2c.offsetHeight;
+const player2 = new MiniFighter(p2c, null);
+player2.flipped = true;
+
+// --- Helpers to fetch fighters & backgrounds ---
+async function fetchJSON(path) {
+    const res = await fetch(path);
+    if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+    return await res.json();
 }
 
 async function setFighters() {
-    const fighterName1 = sessionStorage.getItem("player1");
-    const fighterName2 = sessionStorage.getItem("player2");
+    const name1 = sessionStorage.getItem("player1");
+    const name2 = sessionStorage.getItem("player2");
+    const fighters = await fetchJSON("/fighters");
 
-    getFighters().then(fighters => {
-        const fighter1 = fighters.find(f => f.Name === fighterName1);
-        player1.setImage(fighter1.Idle);
-        player1.scale = fighter1.BackgroundSelectionScale;
-        player1.framesMax = fighter1.IdleFrames;
-        player1.offset = {
-            x: fighter1.BackgroundSelectionOffsetX,
-            y: fighter1.BackgroundSelectionOffsetY
-        };
-        player1.framesHold = 8;
-        const fighter2 = fighters.find(f => f.Name === fighterName2);
-        player2.setImage(fighter2.Idle);
-        player2.scale = fighter2.BackgroundSelectionScale;
-        player2.framesMax = fighter2.IdleFrames;
-        player2.offset = {
-            x: fighter2.BackgroundSelectionOffsetX,
-            y: fighter2.BackgroundSelectionOffsetY
-        };
-        player2.framesHold = 8;
-    });
+    const f1 = fighters.find(f => f.Name === name1);
+    player1.img.src = f1.Idle;
+    player1.scale = f1.BackgroundSelectionScale;
+    player1.framesMax = f1.IdleFrames;
+    player1.offset = {
+        x: f1.BackgroundSelectionOffsetX,
+        y: f1.BackgroundSelectionOffsetY
+    };
+    player1.hold = 8;
+
+    const f2 = fighters.find(f => f.Name === name2);
+    player2.img.src = f2.Idle;
+    player2.scale = f2.BackgroundSelectionScale;
+    player2.framesMax = f2.IdleFrames;
+    player2.offset = {
+        x: f2.BackgroundSelectionOffsetX,
+        y: f2.BackgroundSelectionOffsetY
+    };
+    player2.hold = 8;
 }
 
-function animate() {
-    window.requestAnimationFrame(animate);
-    player1.update();
-    player2.update();
-}
-
-async function getBackgrounds() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/backgrounds");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching backgrounds:", error);
-        return [];
+// --- Populate thumbnails ---
+const bgsContainer = document.getElementById("backgrounds");
+async function setBackgroundThumbnails() {
+    const bgs = await fetchJSON("/backgrounds");
+    for (const bg of bgs) {
+        const img = document.createElement("img");
+        img.src = bg.BackgroundImage;
+        img.alt = bg.Name;
+        img.className = "backgroundImage";
+        bgsContainer.appendChild(img);
     }
 }
 
-// Populate the #backgrounds container with your background images
-async function setBackgrounds() {
-    getBackgrounds().then(backgrounds => {
-        for (const background of backgrounds) {
-            let newImage = document.createElement("img");
-            newImage.src = background.BackgroundImage;
-            newImage.className = "backgroundImage";
-            newImage.alt = background.Name;
+// --- Animation loop for mini‑fighters ---
+function animate() {
+    requestAnimationFrame(animate);
+    player1.update();
+    player2.update();
+}
+animate();
 
-            bgs.appendChild(newImage);
+// --- WebSocket to receive the one gameStart with chosen background ---
+const socket = new WebSocket(
+    (location.protocol === "https:" ? "wss" : "ws") +
+    "://" + location.host
+);
+socket.binaryType = "blob";
+
+socket.addEventListener("open", () => {
+    const room = sessionStorage.getItem("room");
+    const clientId = localStorage.getItem("clientId");
+    socket.send(JSON.stringify({ type: "joinRoom", room, clientId }));
+});
+
+socket.addEventListener("message", async ev => {
+    let text = ev.data instanceof Blob
+        ? await ev.data.text()
+        : ev.data;
+    let msg;
+    try { msg = JSON.parse(text); }
+    catch { return; }
+
+    if (msg.type === "gameStart") {
+        const chosen = msg.background;
+        // highlight & flash the chosen thumbnail
+        const thumb = Array.from(bgsContainer.querySelectorAll("img"))
+            .find(i => i.alt === chosen);
+        if (!thumb) {
+            console.error("Background not found:", chosen);
+            return;
         }
-    });
-}
+        thumb.classList.add("temp-brightness");
 
-function pickRandomBackground() {
-    // Select all the images in the #backgrounds container
-    const bgImages = document.querySelectorAll("#backgrounds img");
-    if (bgImages.length === 0) return;
+        // show it in the big preview
+        document.getElementById("pickedBackground").innerHTML =
+            `<img src="${thumb.src}" id="pickedBackgroundImage" alt="${chosen}">`;
 
-    // Remove the temporary grayscale class from all images
-    bgImages.forEach(img => {
-        img.classList.remove('temp-brightness');
-        // Force reflow so the animation can be restarted if the same image is chosen again.
-        void img.offsetWidth;
-    });
+        // after a short delay, go to /fight
+        setTimeout(() => {
+            window.location.href = "/fight";
+        }, 500);
+    }
+});
 
-    // Choose a random index
-    const randomIndex = Math.floor(Math.random() * bgImages.length);
-    const chosenImage = bgImages[randomIndex];
-
-    // Add the temporary grayscale class to trigger the animation
-    chosenImage.classList.add('temp-brightness');
-
-    // Update the pickedBackground div with the selected image (without effect)
-    document.getElementById("pickedBackground").innerHTML =
-        `<img src="${chosenImage.src}" id="pickedBackgroundImage" alt="${chosenImage.alt}">`;
-    sessionStorage.setItem("background", chosenImage.alt)
-}
-
-
-// Function to start the random picking process and stop it after a duration
-function startRandomPick(duration = 5000, intervalTime = 150) {
-    // Every intervalTime milliseconds, pick a random background
-    const intervalId = setInterval(pickRandomBackground, intervalTime);
-
-    // After 'duration' milliseconds, stop the random picking
-    setTimeout(() => {
-        clearInterval(intervalId);
-    }, duration);
-
-    setTimeout(() => {
-        window.location.href = "/fight"
-    }, duration + 500);
-}
-
-// Initialize the process once the backgrounds are loaded
-async function init() {
+// --- Initialization ---
+(async function init() {
     await setFighters();
-    await setBackgrounds();
-    animate();
-    startRandomPick();
-}
-
-init();
+    await setBackgroundThumbnails();
+})();

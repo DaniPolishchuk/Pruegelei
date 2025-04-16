@@ -10,50 +10,40 @@ const app = express();
 app.use(cors());
 app.use(express.static(path.join(__dirname, '.')));
 
-// --- SQLite helper ---
-const db = new Database('Fighters.db');
-function bufferToBase64(buf) {
-    return `data:image/png;base64,${buf.toString('base64')}`;
-}
-
-// --- HTML routes ---
+// — HTML routes —
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'joinRoom.html')));
 app.get('/fighterSelection', (req, res) => res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html')));
-app.get('/background', (req, res) => res.sendFile(path.join(__dirname, 'backgroundSelection.html')));
+app.get('/background', (req, res) => res.sendFile(path.join(__dirname, 'BackgroundSelection', 'backgroundSelection.html')));
 app.get('/fight', (req, res) => res.sendFile(path.join(__dirname, 'fight.html')));
 
-// --- REST endpoints ---
-// 1) Fighters
+// — SQLite + REST endpoints —
+const db = new Database('Fighters.db');
+function bufferToBase64(buf) { return `data:image/png;base64,${buf.toString('base64')}`; }
+
 app.get('/fighters', (req, res) => {
+    console.log('[REST] GET /fighters');
     const fighters = db.prepare("SELECT * FROM Fighters").all();
     fighters.forEach(f => {
         ['Idle', 'Run', 'Jump', 'Fall', 'Attack1', 'Attack2', 'Attack3', 'Attack4', 'TakeHit', 'Death']
-            .forEach(k => { if (f[k]) f[k] = bufferToBase64(f[k]); });
-        // fallback attacks
+            .forEach(k => f[k] && (f[k] = bufferToBase64(f[k])));
         if (!f.Attack2) Object.assign(f, {
-            Attack2: f.Attack1,
-            Attack2Frames: f.Attack1Frames,
-            Attack2Width: f.Attack1Width,
-            Attack2Height: f.Attack1Height
+            Attack2: f.Attack1, Attack2Frames: f.Attack1Frames,
+            Attack2Width: f.Attack1Width, Attack2Height: f.Attack1Height
         });
         if (!f.Attack3) Object.assign(f, {
-            Attack3: f.Attack2,
-            Attack3Frames: f.Attack2Frames,
-            Attack3Width: f.Attack2Width,
-            Attack3Height: f.Attack2Height
+            Attack3: f.Attack2, Attack3Frames: f.Attack2Frames,
+            Attack3Width: f.Attack2Width, Attack3Height: f.Attack2Height
         });
         if (!f.Attack4) Object.assign(f, {
-            Attack4: f.Attack3,
-            Attack4Frames: f.Attack3Frames,
-            Attack4Width: f.Attack3Width,
-            Attack4Height: f.Attack3Height
+            Attack4: f.Attack3, Attack4Frames: f.Attack3Frames,
+            Attack4Width: f.Attack3Width, Attack4Height: f.Attack3Height
         });
     });
     res.json(fighters);
 });
 
-// 2) Backgrounds
 app.get('/backgrounds', (req, res) => {
+    console.log('[REST] GET /backgrounds');
     const bgs = db.prepare("SELECT * FROM Backgrounds").all();
     bgs.forEach(bg => {
         if (bg.BackgroundImage) bg.BackgroundImage = bufferToBase64(bg.BackgroundImage);
@@ -64,10 +54,11 @@ app.get('/backgrounds', (req, res) => {
     res.json(bgs);
 });
 app.get('/backgrounds/:name/video', (req, res) => {
+    console.log(`[REST] GET /backgrounds/${req.params.name}/video`);
     const row = db.prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?")
         .get(req.params.name);
     if (!row || !row.BorderBackground) {
-        console.log(`Video not found for background: ${req.params.name}`);
+        console.warn(`[REST] Video not found for "${req.params.name}"`);
         return res.status(404).send("Video not found");
     }
     res.writeHead(200, {
@@ -77,156 +68,165 @@ app.get('/backgrounds/:name/video', (req, res) => {
     res.end(row.BorderBackground);
 });
 
-// --- WebSocket lobby ---
+// — WebSocket setup —
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
 /**
- * rooms: {
- *   [roomName]: [
- *     { clientId: string, ws: WebSocket, playerId: number },
- *     ...
- *   ]
- * }
+ * rooms: { [roomName]: Array<{ clientId, ws, playerId }> }
+ * cleanupTimers: { [roomName]: Timeout }
  **/
 const rooms = {};
-/**
- * cleanupTimers: {
- *   [roomName]: Timeout
- * }
- **/
 const cleanupTimers = {};
 
 function broadcastRooms() {
     const list = Object.entries(rooms)
         .map(([name, arr]) => ({ name, count: arr.length }))
         .filter(r => r.count < 2);
+    console.log('[WS] broadcastRooms →', list);
     const msg = JSON.stringify({ type: 'roomsList', rooms: list });
-    console.log(`Broadcasting roomsList: ${JSON.stringify(list)}`);
     wss.clients.forEach(c => {
-        if (c.readyState === WebSocket.OPEN) {
-            c.send(msg);
-        }
+        if (c.readyState === WebSocket.OPEN) c.send(msg);
     });
 }
 
 wss.on('connection', ws => {
-    console.log('New WebSocket connection');
+    console.log('[WS] new connection');
     ws.clientId = null;
     ws.room = null;
 
-    // Immediately send current rooms
+    // Immediately send lobby state
     broadcastRooms();
 
     ws.on('message', raw => {
         let data;
-        try { data = JSON.parse(raw); } catch (e) {
-            console.error('Invalid JSON:', e);
+        try {
+            data = JSON.parse(raw);
+        } catch (err) {
+            console.error('[WS] invalid JSON:', err);
             return;
         }
-        const { type, room, clientId } = data;
-        console.log(`Received message: type=${type}, room=${room}, clientId=${clientId}`);
+        const { type, room: incomingRoom, clientId } = data;
         ws.clientId = clientId;
+        console.log(`[WS] recv "${type}" from clientId=${ws.clientId} (ws.room=${ws.room})`);
 
-        // Cancel any pending room cleanup if host reconnected
-        if (room && cleanupTimers[room]) {
-            clearTimeout(cleanupTimers[room]);
-            delete cleanupTimers[room];
-            console.log(`Cleared cleanup timer for room ${room}`);
+        // Cancel any pending cleanup for this room
+        if (ws.room && cleanupTimers[ws.room]) {
+            clearTimeout(cleanupTimers[ws.room]);
+            delete cleanupTimers[ws.room];
+            console.log(`[WS] cleared cleanupTimer for room="${ws.room}"`);
         }
 
-        // 1) Client requested room list
-        if (type === 'getRooms') {
-            broadcastRooms();
-            return;
-        }
-
-        // 2) Create a new room
-        if (type === 'createRoom') {
-            if (!rooms[room]) rooms[room] = [];
-            let entry = rooms[room].find(e => e.clientId === clientId);
-            if (!entry) {
-                entry = { clientId, ws, playerId: 1 };
-                rooms[room].push(entry);
-            } else {
-                entry.ws = ws;
-            }
-            ws.room = room;
-            console.log(`Room "${room}" created by ${clientId}`);
-            ws.send(JSON.stringify({ type: 'roomCreated', room }));
-            broadcastRooms();
-            return;
-        }
-
-        // 3) Join or rejoin a room
-        if (type === 'joinRoom') {
-            if (!rooms[room]) {
-                ws.send(JSON.stringify({ type: 'error', message: 'Room does not exist.' }));
-                console.warn(`Join attempt to non-existent room "${room}" by ${clientId}`);
+        switch (type) {
+            case 'getRooms':
+                broadcastRooms();
                 return;
-            }
-            let entry = rooms[room].find(e => e.clientId === clientId);
-            if (entry) {
-                // Rejoin
-                entry.ws = ws;
-                ws.room = room;
-                console.log(`Client ${clientId} rejoined room "${room}" as Player ${entry.playerId}`);
-                ws.send(JSON.stringify({ type: 'roomJoined', room, playerId: entry.playerId }));
-                // If second player already present, notify them too
-                if (rooms[room].length === 2) {
-                    rooms[room].forEach(e => {
-                        if (e.clientId !== clientId) {
-                            e.ws.send(JSON.stringify({ type: 'roomJoined', room, playerId: e.playerId }));
-                        }
-                    });
+
+            case 'createRoom': {
+                if (!rooms[incomingRoom]) rooms[incomingRoom] = [];
+                let e = rooms[incomingRoom].find(x => x.clientId === clientId);
+                if (!e) {
+                    e = { clientId, ws, playerId: 1 };
+                    rooms[incomingRoom].push(e);
+                    console.log(`[WS] created room="${incomingRoom}" (playerId=1)`);
+                } else {
+                    e.ws = ws;
+                    console.log(`[WS] reattached host to room="${incomingRoom}"`);
                 }
+                ws.room = incomingRoom;
+                ws.send(JSON.stringify({ type: 'roomCreated', room: incomingRoom }));
                 broadcastRooms();
                 return;
             }
-            // New joiner
-            if (rooms[room].length >= 2) {
-                ws.send(JSON.stringify({ type: 'error', message: 'Room is full.' }));
-                console.warn(`Room "${room}" full; join attempt by ${clientId}`);
+
+            case 'joinRoom': {
+                if (!rooms[incomingRoom]) {
+                    ws.send(JSON.stringify({ type: 'error', message: 'Room not found.' }));
+                    console.warn(`[WS] joinRoom failed—room="${incomingRoom}" not exist`);
+                    return;
+                }
+                let e = rooms[incomingRoom].find(x => x.clientId === clientId);
+                if (e) {
+                    // rejoin
+                    e.ws = ws;
+                    ws.room = incomingRoom;
+                    console.log(`[WS] client="${clientId}" rejoined as playerId=${e.playerId}`);
+                    ws.send(JSON.stringify({ type: 'roomJoined', room: incomingRoom, playerId: e.playerId }));
+                    if (rooms[incomingRoom].length === 2) {
+                        rooms[incomingRoom].forEach(x => {
+                            x.ws.send(JSON.stringify({ type: 'roomJoined', room: incomingRoom, playerId: x.playerId }));
+                        });
+                    }
+                    broadcastRooms();
+                    return;
+                }
+                if (rooms[incomingRoom].length >= 2) {
+                    ws.send(JSON.stringify({ type: 'error', message: 'Room is full.' }));
+                    console.warn(`[WS] joinRoom failed—room="${incomingRoom}" full`);
+                    return;
+                }
+                e = { clientId, ws, playerId: rooms[incomingRoom].length + 1 };
+                rooms[incomingRoom].push(e);
+                ws.room = incomingRoom;
+                console.log(`[WS] client="${clientId}" joined room="${incomingRoom}" as playerId=${e.playerId}`);
+                rooms[incomingRoom].forEach(x => {
+                    x.ws.send(JSON.stringify({ type: 'roomJoined', room: incomingRoom, playerId: x.playerId }));
+                });
+                broadcastRooms();
                 return;
             }
-            entry = { clientId, ws, playerId: rooms[room].length + 1 };
-            rooms[room].push(entry);
-            ws.room = room;
-            console.log(`Client ${clientId} joined room "${room}" as Player ${entry.playerId}`);
-            // Notify both
-            rooms[room].forEach(e => {
-                e.ws.send(JSON.stringify({ type: 'roomJoined', room, playerId: e.playerId }));
-            });
-            broadcastRooms();
-            return;
-        }
 
-        // 4) Relay any other messages to the other participant(s) in the room
-        if (ws.room && rooms[ws.room]) {
-            console.log(`Relaying message type="${type}" from ${clientId} to others in room "${ws.room}"`);
-            rooms[ws.room].forEach(e => {
-                if (e.clientId !== clientId && e.ws.readyState === WebSocket.OPEN) {
-                    e.ws.send(raw);
+            case 'gameStart': {
+                const roomName = ws.room;
+                if (!roomName || !rooms[roomName]) {
+                    console.warn(`[WS] gameStart failed—no room on ws`);
+                    return;
                 }
-            });
+                const rows = db.prepare("SELECT Name FROM Backgrounds").all();
+                const names = rows.map(r => r.Name);
+                const choice = names[Math.floor(Math.random() * names.length)];
+                console.log(`[WS] gameStart: picked "${choice}" for room="${roomName}"`);
+                rooms[roomName].forEach(x => {
+                    if (x.ws.readyState === WebSocket.OPEN) {
+                        x.ws.send(JSON.stringify({ type: 'gameStart', background: choice }));
+                    }
+                });
+                return;
+            }
+
+            default:
+                // relay fighterSelected, ready, etc.
+                const relayRoom = ws.room;
+                if (relayRoom && rooms[relayRoom]) {
+                    console.log(`[WS] relaying "${type}" in room="${relayRoom}"`);
+                    rooms[relayRoom].forEach(x => {
+                        if (x.clientId !== ws.clientId && x.ws.readyState === WebSocket.OPEN) {
+                            x.ws.send(raw);
+                        }
+                    });
+                } else {
+                    console.warn(`[WS] cannot relay "${type}"—ws.room="${relayRoom}" invalid`);
+                }
         }
     });
 
     ws.on('close', () => {
-        console.log(`WebSocket closed for clientId=${ws.clientId} in room=${ws.room}`);
-        const room = ws.room;
-        if (!room || !rooms[room]) return;
-        // Schedule cleanup after 10s in case the host refreshes
-        cleanupTimers[room] = setTimeout(() => {
-            console.log(`Cleaning up empty room "${room}" after grace period`);
-            delete rooms[room];
-            delete cleanupTimers[room];
-            broadcastRooms();
-        }, 10000);
+        console.log(`[WS] connection closed for clientId=${ws.clientId} room=${ws.room}`);
+        const roomName = ws.room;
+        if (!roomName || !rooms[roomName]) return;
+        // only schedule cleanup once per room
+        if (!cleanupTimers[roomName]) {
+            cleanupTimers[roomName] = setTimeout(() => {
+                console.log(`[WS] cleaning up empty room="${roomName}"`);
+                delete rooms[roomName];
+                delete cleanupTimers[roomName];
+                broadcastRooms();
+            }, 10000);
+            console.log(`[WS] scheduled cleanup for room="${roomName}" in 10s`);
+        }
     });
 });
 
-const PORT = 5001;
-server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server listening on http://0.0.0.0:${PORT}`);
+server.listen(5001, '0.0.0.0', () => {
+    console.log('Server listening on http://0.0.0.0:5001');
 });
