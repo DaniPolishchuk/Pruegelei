@@ -1,103 +1,131 @@
+// server.js
 const express = require('express');
 const cors = require('cors');
-const Database = require('better-sqlite3');
 const path = require('path');
+const http = require('http');
+const WebSocket = require('ws');
+const Database = require('better-sqlite3');
 
 const app = express();
-app.use(cors()); // Enable CORS for frontend requests
+app.use(cors());
+app.use(express.static(path.join(__dirname, '.')));  // serve everything in project root
 
+// --- SQLite setup ---
 const db = new Database('Fighters.db');
-
-// Serve static files (HTML, CSS, JS)
-app.use(express.static(path.join(__dirname, '.'))); // Serves files from the project folder
-
-// API route to fetch fighters (with Base64 images)
-function bufferToBase64(buffer) {
-    return `data:image/png;base64,${buffer.toString('base64')}`;
+function bufferToBase64(buff) {
+    return `data:image/png;base64,${buff.toString('base64')}`;
 }
 
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'FighterSelection/fighterSelection.html'));
-});
+// --- HTML routes ---
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'joinRoom.html')));
+app.get('/fighterSelection', (req, res) => res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html')));
+app.get('/background', (req, res) => res.sendFile(path.join(__dirname, 'backgroundSelection.html')));
+app.get('/fight', (req, res) => res.sendFile(path.join(__dirname, 'fight.html')));
 
-app.get('/background', (req, res) => {
-    res.sendFile(path.join(__dirname, 'BackgroundSelection/backgroundSelection.html'));
-});
-
-app.get('/fight', (req, res) => {
-    res.sendFile(path.join(__dirname, 'Fight/fight.html'));
-});
-
+// --- REST APIs ---
+// 1) Fighters
 app.get('/fighters', (req, res) => {
     const fighters = db.prepare("SELECT * FROM Fighters").all();
-
-    // Convert image BLOBs to Base64
-    fighters.forEach(fighter => {
-        // Convert valid images from BLOB to Base64
-        if (fighter.Idle) fighter.Idle = bufferToBase64(fighter.Idle);
-        if (fighter.Run) fighter.Run = bufferToBase64(fighter.Run);
-        if (fighter.Jump) fighter.Jump = bufferToBase64(fighter.Jump);
-        if (fighter.Fall) fighter.Fall = bufferToBase64(fighter.Fall);
-        if (fighter.Attack1) fighter.Attack1 = bufferToBase64(fighter.Attack1);
-        if (fighter.Attack2) fighter.Attack2 = bufferToBase64(fighter.Attack2);
-        if (fighter.Attack3) fighter.Attack3 = bufferToBase64(fighter.Attack3);
-        if (fighter.Attack4) fighter.Attack4 = bufferToBase64(fighter.Attack4);
-        if (fighter.TakeHit) fighter.TakeHit = bufferToBase64(fighter.TakeHit);
-        if (fighter.Death) fighter.Death = bufferToBase64(fighter.Death);
-
-        // Ensure Attack2, Attack3, and Attack4 use valid images
-        if (!fighter.Attack2) {
-            fighter.Attack2 = fighter.Attack1;
-            fighter.Attack2Frames = fighter.Attack1Frames;
-            fighter.Attack2Width = fighter.Attack1Width;
-            fighter.Attack2Height = fighter.Attack1Height;
-        }
-        if (!fighter.Attack3){
-            fighter.Attack3 = fighter.Attack2;
-            fighter.Attack3Frames = fighter.Attack2Frames;
-            fighter.Attack3Width = fighter.Attack2Width;
-            fighter.Attack3Height = fighter.Attack2Height;
-        }
-        if (!fighter.Attack4){
-            fighter.Attack4 = fighter.Attack3;
-            fighter.Attack4Frames = fighter.Attack3Frames;
-            fighter.Attack4Width = fighter.Attack3Width;
-            fighter.Attack4Height = fighter.Attack3Height;
-        }
+    fighters.forEach(f => {
+        ['Idle', 'Run', 'Jump', 'Fall', 'Attack1', 'Attack2', 'Attack3', 'Attack4', 'TakeHit', 'Death']
+            .forEach(k => { if (f[k]) f[k] = bufferToBase64(f[k]); });
+        if (!f.Attack2) f.Attack2 = f.Attack1, Object.assign(f, {
+            Attack2Frames: f.Attack1Frames,
+            Attack2Width: f.Attack1Width,
+            Attack2Height: f.Attack1Height
+        });
+        if (!f.Attack3) f.Attack3 = f.Attack2, Object.assign(f, {
+            Attack3Frames: f.Attack2Frames,
+            Attack3Width: f.Attack2Width,
+            Attack3Height: f.Attack2Height
+        });
+        if (!f.Attack4) f.Attack4 = f.Attack3, Object.assign(f, {
+            Attack4Frames: f.Attack3Frames,
+            Attack4Width: f.Attack3Width,
+            Attack4Height: f.Attack3Height
+        });
     });
-
     res.json(fighters);
 });
 
+// 2) Backgrounds
 app.get('/backgrounds', (req, res) => {
-    const backgrounds = db.prepare("SELECT * FROM Backgrounds").all();
-
-    backgrounds.forEach(background => {
-        if (background.BackgroundImage) background.BackgroundImage = bufferToBase64(background.BackgroundImage);
-        if (background.BorderBackground) background.BorderBackground = `/backgrounds/${encodeURIComponent(background.Name)}/video`;
+    const bgs = db.prepare("SELECT * FROM Backgrounds").all();
+    bgs.forEach(bg => {
+        if (bg.BackgroundImage) bg.BackgroundImage = bufferToBase64(bg.BackgroundImage);
+        if (bg.BorderBackground) bg.BorderBackground = `/backgrounds/${encodeURIComponent(bg.Name)}/video`;
     });
-
-    res.json(backgrounds);
+    res.json(bgs);
 });
-
 app.get('/backgrounds/:name/video', (req, res) => {
-    const name = req.params.name;
-
-    const row = db.prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?").get(name);
+    const row = db.prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?")
+        .get(req.params.name);
     if (!row || !row.BorderBackground) {
-        return res.status(404).send("Video not found for background: " + name);
+        return res.status(404).send("Video not found");
     }
-
-    const buffer = row.BorderBackground;
-
     res.writeHead(200, {
         'Content-Type': 'video/mp4',
-        'Content-Length': buffer.length
+        'Content-Length': row.BorderBackground.length
     });
-
-    res.end(buffer);
+    res.end(row.BorderBackground);
 });
 
-// Start the server
-const PORT = 5001;
-app.listen(PORT, () => console.log(`Server running at http://127.0.0.1:${PORT}`));
+// --- WebSocket rooms ---
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
+const rooms = {};  // { [roomName]: Set<clientId> }
+
+wss.on('connection', ws => {
+    ws.clientId = null;
+
+    const broadcast = () => {
+        const list = Object.entries(rooms).map(([name, set]) => ({ name, count: set.size }));
+        wss.clients.forEach(c => {
+            if (c.readyState === WebSocket.OPEN) {
+                c.send(JSON.stringify({ type: 'roomsList', rooms: list }));
+            }
+        });
+    };
+
+    ws.on('message', raw => {
+        let msg;
+        try { msg = JSON.parse(raw); } catch { return; }
+        const { type, room, clientId } = msg;
+        ws.clientId = clientId;
+
+        if (type === 'getRooms') {
+            broadcast();
+        }
+        if (type === 'createRoom') {
+            rooms[room] = rooms[room] || new Set();
+            rooms[room].add(clientId);
+            ws.send(JSON.stringify({ type: 'roomCreated', room, playerId: 1 }));
+            broadcast();
+        }
+        if (type === 'joinRoom') {
+            if (rooms[room] && rooms[room].size < 2) {
+                rooms[room].add(clientId);
+                ws.send(JSON.stringify({
+                    type: 'roomJoined',
+                    room,
+                    playerId: rooms[room].size
+                }));
+                broadcast();
+            } else {
+                ws.send(JSON.stringify({ type: 'error', message: 'Room full or missing' }));
+            }
+        }
+    });
+
+    ws.on('close', () => {
+        Object.entries(rooms).forEach(([name, set]) => {
+            set.delete(ws.clientId);
+            if (!set.size) delete rooms[name];
+        });
+        broadcast();
+    });
+});
+
+server.listen(5001, () => {
+    console.log('Server running on http://0.0.0.0:5001');
+});

@@ -1,0 +1,99 @@
+/* Bring in your game‐wide defaults: */
+* {
+    box-sizing: border-box;
+    font-family: 'Press Start 2P', cursive;
+    overflow: hidden;
+}
+
+body,
+html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+/* video‐background wrapper */
+.video-container {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+.video-container video {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    z-index: -1;
+}
+
+/* your existing joinRoom styles, lightly adapted */
+#joinRoomContainer {
+    position: relative;
+    z-index: 1;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 40px;
+    margin: auto;
+    max-width: 600px;
+    border: 3px solid orange;
+    text-align: center;
+    color: orange;
+    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
+}
+
+#joinRoomContainer h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+}
+
+#joinRoomContainer h2 {
+    font-size: 32px;
+    margin: 10px 0;
+}
+
+#joinRoomContainer input {
+    width: 80%;
+    max-width: 300px;
+    padding: 10px;
+    font-size: 18px;
+    border: 2px solid orange;
+    background: black;
+    color: orange;
+    text-align: center;
+    margin: 10px 0;
+}
+
+#joinRoomContainer button {
+    padding: 10px 20px;
+    font-size: 24px;
+    border: 2px solid orange;
+    background: black;
+    color: orange;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+#joinRoomContainer button:hover {
+    background: orange;
+    color: black;
+}
+
+hr {
+    border: 1px solid orange;
+    margin: 20px 0;
+}
+
+#availableRooms ul {
+    list-style: none;
+    padding: 0;
+}
+
+#availableRooms li {
+    font-size: 20px;
+    margin: 10px 0;
+    cursor: pointer;
+}

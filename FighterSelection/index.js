@@ -1,70 +1,69 @@
-//import { getFighters } from "../Fight/js/utils.js";
+// FighterSelection/index.js
 
-export class MiniFighter {
+// — fetch the fighter list from your REST API
+async function getFighters() {
+    try {
+        const res = await fetch('/fighters');
+        if (!res.ok) throw new Error(res.status);
+        return await res.json();
+    } catch (err) {
+        console.error('Error fetching fighters:', err);
+        return [];
+    }
+}
+
+// — MiniFighter class for the little canvases
+class MiniFighter {
     constructor(canvas, idle, scale, idleFrames, offset) {
         this.canvas = canvas;
-        this.ctx = this.canvas.getContext("2d");
+        this.ctx = canvas.getContext('2d');
         this.image = new Image();
-        this.image.onload = () => this.loaded = true;
-        this.image.onerror = () => this.loaded = false;
         this.loaded = false;
+        this.image.onload = () => (this.loaded = true);
+        this.image.onerror = () => (this.loaded = false);
         this.setImage(idle);
+
         this.scale = scale || 0;
         this.framesMax = idleFrames || 0;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
         this.framesHold = 4;
-        this.offset = offset || {x: 0, y: 0};
+        this.offset = offset || { x: 0, y: 0 };
         this.flipped = false;
         this.name = null;
     }
 
-    setImage(idle) {
-        if (idle) {
-            this.loaded = false; // Reset until new image loads
-            this.image.src = idle;
-        } else {
-            this.image.src = ""; // Clear src if idle is null
+    setImage(src) {
+        if (src) {
             this.loaded = false;
+            this.image.src = src;
         }
     }
 
     draw() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.loaded && this.image.src) {
-            const frameWidth = this.image.width / this.framesMax;
-            const drawWidth = frameWidth * this.scale;
-            const drawHeight = this.image.height * this.scale;
-            const drawX = 0 - this.offset.x;
-            const drawY = 0 - this.offset.y;
-            if (this.flipped) {
-                this.ctx.save();
-                this.ctx.scale(-1, 1);
-                this.ctx.drawImage(
-                    this.image,
-                    this.framesCurrent * frameWidth,
-                    0,
-                    frameWidth,
-                    this.image.height,
-                    -(drawX + drawWidth),
-                    drawY,
-                    drawWidth,
-                    drawHeight
-                );
-                this.ctx.restore();
-            } else {
-                this.ctx.drawImage(
-                    this.image,
-                    this.framesCurrent * frameWidth,
-                    0,
-                    frameWidth,
-                    this.image.height,
-                    drawX,
-                    drawY,
-                    drawWidth,
-                    drawHeight
-                );
-            }
+        if (!this.loaded) return;
+        const fw = this.image.width / this.framesMax;
+        const dw = fw * this.scale;
+        const dh = this.image.height * this.scale;
+        const dx = -this.offset.x;
+        const dy = -this.offset.y;
+
+        if (this.flipped) {
+            this.ctx.save();
+            this.ctx.scale(-1, 1);
+            this.ctx.drawImage(
+                this.image,
+                this.framesCurrent * fw, 0, fw, this.image.height,
+                -(dx + dw), dy, dw, dh
+            );
+            this.ctx.restore();
+        } else {
+            this.ctx.drawImage(
+                this.image,
+                this.framesCurrent * fw, 0, fw, this.image.height,
+                dx, dy, dw, dh
+            );
         }
     }
 
@@ -72,134 +71,101 @@ export class MiniFighter {
         this.draw();
         this.framesElapsed++;
         if (this.framesElapsed % this.framesHold === 0) {
-            if (this.framesCurrent < this.framesMax - 1) {
-                this.framesCurrent++;
-            } else {
-                this.framesCurrent = 0;
-            }
+            this.framesCurrent = (this.framesCurrent + 1) % this.framesMax;
         }
-
     }
 }
 
-const player1canvas = document.getElementById("player1canvas");
-player1canvas.width = player1canvas.offsetWidth;
-player1canvas.height = player1canvas.offsetHeight;
-export const player1 = new MiniFighter(player1canvas, null);
+// — grab UI elements & set up canvases
+const p1c = document.getElementById('player1canvas');
+p1c.width = p1c.offsetWidth;
+p1c.height = p1c.offsetHeight;
+const player1 = new MiniFighter(p1c, null);
 
-const player2canvas = document.getElementById("player2canvas");
-player2canvas.width = player2canvas.offsetWidth;
-player2canvas.height = player2canvas.offsetHeight;
-export const player2 = new MiniFighter(document.getElementById("player2canvas"), null);
+const p2c = document.getElementById('player2canvas');
+p2c.width = p2c.offsetWidth;
+p2c.height = p2c.offsetHeight;
+const player2 = new MiniFighter(p2c, null);
 player2.flipped = true;
 
-const allFighters = [];
+const allFightersDiv = document.getElementById('availableFighters');
+const readyBtn1 = document.getElementById('readyButton1');
+const readyBtn2 = document.getElementById('readyButton2');
+const startBtn = document.getElementById('startButton');
 
 function animate() {
-    window.requestAnimationFrame(animate);
+    requestAnimationFrame(animate);
     player1.update();
     player2.update();
-    allFighters.forEach((fighter) => {
-        fighter.update();
-    });
+    allFighters.forEach(f => f.update());
 }
 
-async function getFighters() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/fighters");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching fighters:", error);
-        return [];
-    }
+function getReady(btn) {
+    btn.pressed = !btn.pressed;
+    btn.style.backgroundColor = btn.pressed ? 'orange' : 'black';
+    btn.style.color = btn.pressed ? 'black' : 'orange';
+    startBtn.style.visibility = (readyBtn1.pressed && readyBtn2.pressed) ? 'visible' : 'hidden';
 }
 
+// — build the fighter‑buttons grid
+const allFighters = [];
 async function fillDivWithFighters() {
-    getFighters().then(fighters => {
-        for (const fighter of fighters) {
-            let newButton = document.createElement("button");
-            newButton.className = "fighter";
-            let newCanvas = document.createElement("canvas");
-            newCanvas.className = "miniCanvas";
-            newButton.appendChild(newCanvas);
-            let parent = document.getElementById("availableFighters");
-            parent.appendChild(newButton);
-            newCanvas.width = newButton.offsetWidth;
-            newCanvas.height = newButton.offsetHeight;
-            allFighters.push(new MiniFighter(newCanvas, fighter.Idle, fighter.SelectionMenuScale, fighter.IdleFrames, {
-                x: fighter.SelectionMenuOffsetX,
-                y: fighter.SelectionMenuOffsetY,
-            }));
-            newButton.addEventListener("click", () => selectFighter(fighter));
-        }
+    const fighters = await getFighters();
+    fighters.forEach(f => {
+        const btn = document.createElement('button');
+        btn.className = 'fighter';
+        const cvs = document.createElement('canvas');
+        cvs.className = 'miniCanvas';
+        btn.appendChild(cvs);
+        allFightersDiv.appendChild(btn);
+
+        cvs.width = btn.offsetWidth;
+        cvs.height = btn.offsetHeight;
+
+        const mini = new MiniFighter(
+            cvs,
+            f.Idle,
+            f.SelectionMenuScale,
+            f.IdleFrames,
+            { x: f.SelectionMenuOffsetX, y: f.SelectionMenuOffsetY }
+        );
+        allFighters.push(mini);
+
+        btn.onclick = () => {
+            if (!readyBtn1.pressed) {
+                player1.setImage(f.Idle);
+                player1.scale = f.SelectedScale;
+                player1.framesMax = f.IdleFrames;
+                player1.offset = { x: f.SelectedOffsetX, y: f.SelectedOffsetY };
+                player1.name = f.Name;
+                readyBtn1.pressed = true;
+                readyBtn1.style.visibility = 'visible';
+            } else if (!readyBtn2.pressed) {
+                player2.setImage(f.Idle);
+                player2.scale = f.SelectedScale;
+                player2.framesMax = f.IdleFrames;
+                player2.offset = { x: f.SelectedOffsetX, y: f.SelectedOffsetY };
+                player2.name = f.Name;
+                readyBtn2.pressed = true;
+                readyBtn2.style.visibility = 'visible';
+            }
+            getReady(readyBtn1);
+            getReady(readyBtn2);
+        };
     });
 }
 
-function selectFighter(fighter) {
-    if (!readyButton1.pressed) {
-        player1.setImage(fighter.Idle);
-        player1.scale = fighter.SelectedScale;
-        player1.framesMax = fighter.IdleFrames;
-        player1.offset = {
-            x: fighter.SelectedOffsetX,
-            y: fighter.SelectedOffsetY
-        };
-        player1.framesCurrent = 0;
-        player1.name = fighter.Name;
+// — wiring up the ready/start buttons
+readyBtn1.onclick = () => getReady(readyBtn1);
+readyBtn2.onclick = () => getReady(readyBtn2);
+startBtn.onclick = () => {
+    sessionStorage.setItem('player1', player1.name);
+    sessionStorage.setItem('player2', player2.name);
+    window.location.href = '/background';
+};
 
-        readyButton1.style.visibility = "visible";
-    } else if (!readyButton2.pressed) {
-        player2.setImage(fighter.Idle);
-        player2.scale = fighter.SelectedScale;
-        player2.framesMax = fighter.IdleFrames;
-        player2.offset = {
-            x: fighter.SelectedOffsetX,
-            y: fighter.SelectedOffsetY
-        };
-        player2.framesCurrent = 0;
-        player2.name = fighter.Name;
-
-        readyButton2.style.visibility = "visible";
-    }
-}
-
-const readyButton1 = document.getElementById("readyButton1");
-const readyButton2 = document.getElementById("readyButton2");
-const startButton = document.getElementById("startButton");
-if (readyButton1 && readyButton2 && startButton) {
-    readyButton1.addEventListener("click", () => getReady(readyButton1));
-    readyButton2.addEventListener("click", () => getReady(readyButton2));
-    startButton.addEventListener("click", startBgPicking)
-}
-
-function getReady(button) {
-    if (!button.pressed) {
-        button.style.backgroundColor = "orange";
-        button.style.color = "black";
-        button.pressed = true;
-    } else {
-        button.style.backgroundColor = "black";
-        button.style.color = "orange";
-        button.pressed = false;
-    }
-
-    if (readyButton1.pressed && readyButton2.pressed) {
-        startButton.style.visibility = "visible";
-    } else {
-        startButton.style.visibility = "hidden";
-    }
-}
-
-function startBgPicking() {
-    sessionStorage.setItem("player1", player1.name)
-    sessionStorage.setItem("player2", player2.name)
-    window.location.href = "/background"
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    fillDivWithFighters();
+// — kick things off
+document.addEventListener('DOMContentLoaded', async () => {
+    await fillDivWithFighters();
+    animate();
 });
-animate();
