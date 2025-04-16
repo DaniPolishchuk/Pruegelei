@@ -6,7 +6,7 @@
         localStorage.setItem('clientId', clientId);
     }
 
-    // 2) WebSocket → same host:port you used in the URL bar
+    // 2) WS to same host:port
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
     const socket = new WebSocket(`${proto}://${location.host}`);
     socket.binaryType = 'blob';
@@ -16,30 +16,28 @@
     });
 
     socket.addEventListener('message', ev => {
-        const data = JSON.parse(ev.data);
-        switch (data.type) {
+        const d = JSON.parse(ev.data);
+        switch (d.type) {
             case 'roomsList':
-                renderRooms(data.rooms);
+                renderRooms(d.rooms);
                 break;
 
             case 'roomCreated':
-                // Host: stay in lobby, waiting for someone to join
-                console.log('Created room:', data.room);
-                sessionStorage.setItem('room', data.room);
+                // Immediately go pick fighters
+                sessionStorage.setItem('room', d.room);
+                sessionStorage.setItem('myPlayerId', 1);
+                window.location.href = '/fighterSelection';
                 break;
 
             case 'roomJoined':
-                // Both host & joiner end up here when 2nd player arrives
-                console.log('Joined room as player', data.playerId);
-                sessionStorage.setItem('room', data.room);
-                sessionStorage.setItem('myPlayerId', data.playerId);
-                setTimeout(() => {
-                    window.location.href = '/fighterSelection';
-                }, 200);
+                // Joiner lands here
+                sessionStorage.setItem('room', d.room);
+                sessionStorage.setItem('myPlayerId', d.playerId);
+                window.location.href = '/fighterSelection';
                 break;
 
             case 'error':
-                alert(data.message);
+                alert(d.message);
                 break;
         }
     });
@@ -68,16 +66,15 @@
         });
     }
 
-    // UI bindings
     document.getElementById('createRoomBtn').onclick = () => {
-        const name = document.getElementById('newRoomInput').value.trim();
-        if (!name) return alert('Please enter a room name.');
-        socket.send(JSON.stringify({ type: 'createRoom', room: name, clientId }));
+        const n = document.getElementById('newRoomInput').value.trim();
+        if (!n) return alert('Enter a room name.');
+        socket.send(JSON.stringify({ type: 'createRoom', room: n, clientId }));
     };
     document.getElementById('joinRoomBtn').onclick = () => {
-        const name = document.getElementById('roomInput').value.trim();
-        if (!name) return alert('Please enter a room name.');
-        socket.send(JSON.stringify({ type: 'joinRoom', room: name, clientId }));
+        const n = document.getElementById('roomInput').value.trim();
+        if (!n) return alert('Enter a room name.');
+        socket.send(JSON.stringify({ type: 'joinRoom', room: n, clientId }));
     };
     document.getElementById('localModeBtn').onclick = () => {
         sessionStorage.setItem('room', 'local');
