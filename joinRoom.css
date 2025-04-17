@@ -38,7 +38,7 @@ html {
     background: rgba(0, 0, 0, 0.8);
     padding: 40px;
     margin: auto;
-    max-width: 600px;
+    max-width: 75%;
     border: 3px solid orange;
     text-align: center;
     color: orange;

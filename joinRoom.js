@@ -1,84 +1,66 @@
-(() => {
-    // 1) Persistent clientId
-    let clientId = localStorage.getItem('clientId');
-    if (!clientId) {
-        clientId = Date.now() + '_' + Math.random().toString(36).substr(2);
-        localStorage.setItem('clientId', clientId);
-    }
+// joinRoom.js
+// — no more restore() here —
 
-    // 2) WS to same host:port
-    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-    const socket = new WebSocket(`${proto}://${location.host}`);
-    socket.binaryType = 'blob';
-
-    socket.addEventListener('open', () => {
-        socket.send(JSON.stringify({ type: 'getRooms' }));
-    });
-
-    socket.addEventListener('message', ev => {
-        const d = JSON.parse(ev.data);
-        switch (d.type) {
-            case 'roomsList':
-                renderRooms(d.rooms);
-                break;
-
-            case 'roomCreated':
-                // Immediately go pick fighters
-                sessionStorage.setItem('room', d.room);
-                sessionStorage.setItem('myPlayerId', 1);
-                window.location.href = '/fighterSelection';
-                break;
-
-            case 'roomJoined':
-                // Joiner lands here
-                sessionStorage.setItem('room', d.room);
-                sessionStorage.setItem('myPlayerId', d.playerId);
-                window.location.href = '/fighterSelection';
-                break;
-
-            case 'error':
-                alert(d.message);
-                break;
-        }
-    });
-
-    function renderRooms(rooms) {
-        const ul = document.getElementById('roomsList');
-        ul.innerHTML = '';
-        if (!rooms.length) {
-            ul.innerHTML = '<li>No rooms available</li>';
-            return;
-        }
-        rooms.forEach(r => {
-            const li = document.createElement('li');
-            li.textContent = `${r.name} (${r.count}/2)`;
-            li.style.cursor = r.count < 2 ? 'pointer' : 'not-allowed';
-            if (r.count < 2) {
-                li.onclick = () => {
-                    socket.send(JSON.stringify({
-                        type: 'joinRoom',
-                        room: r.name,
-                        clientId
-                    }));
-                };
-            }
-            ul.appendChild(li);
-        });
-    }
-
-    document.getElementById('createRoomBtn').onclick = () => {
-        const n = document.getElementById('newRoomInput').value.trim();
-        if (!n) return alert('Enter a room name.');
-        socket.send(JSON.stringify({ type: 'createRoom', room: n, clientId }));
-    };
-    document.getElementById('joinRoomBtn').onclick = () => {
-        const n = document.getElementById('roomInput').value.trim();
-        if (!n) return alert('Enter a room name.');
-        socket.send(JSON.stringify({ type: 'joinRoom', room: n, clientId }));
-    };
-    document.getElementById('localModeBtn').onclick = () => {
-        sessionStorage.setItem('room', 'local');
-        sessionStorage.setItem('myPlayerId', 1);
-        socket.send(JSON.stringify({ type: 'joinRoom', room: 'local', clientId }));
-    };
+const socket = io();
+const clientId = localStorage.clientId || (() => {
+    const id = Date.now() + '_' + Math.random().toString(36).slice(2);
+    localStorage.clientId = id;
+    return id;
 })();
+
+// UI references
+const roomsList = document.getElementById('roomsList');
+const createBtn = document.getElementById('createRoomBtn');
+const joinBtn = document.getElementById('joinRoomBtn');
+const newRoomInput = document.getElementById('newRoomInput');
+const joinRoomInput = document.getElementById('roomInput');
+
+function renderRooms(list) {
+    roomsList.innerHTML = '';
+    if (!list.length) {
+        roomsList.innerHTML = '<li>No rooms available</li>';
+        return;
+    }
+    list.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = `${r.name} (${r.count}/2 players)`;
+        li.style.cursor = r.count < 2 ? 'pointer' : 'not-allowed';
+        if (r.count < 2) {
+            li.onclick = () => socket.emit('joinRoom', { roomName: r.name, clientId });
+        }
+        roomsList.appendChild(li);
+    });
+}
+
+socket.on('connect', () => {
+    socket.emit('getRooms');
+});
+socket.on('roomsList', renderRooms);
+
+createBtn.onclick = () => {
+    const name = newRoomInput.value.trim();
+    if (!name) return alert('Please enter a room name.');
+    socket.emit('createRoom', { roomName: name, clientId });
+};
+
+joinBtn.onclick = () => {
+    const name = joinRoomInput.value.trim();
+    if (!name) return alert('Please enter a room name.');
+    socket.emit('joinRoom', { roomName: name, clientId });
+};
+
+socket.on('roomCreated', ({ room, playerId }) => {
+    sessionStorage.setItem('room', room);
+    sessionStorage.setItem('playerId', playerId);
+    window.location.href = '/fighterSelection';
+});
+
+socket.on('roomJoined', ({ room, playerAssignments }) => {
+    // figure out our assignment
+    const our = playerAssignments.find(p => p.clientId === clientId);
+    sessionStorage.setItem('room', room);
+    sessionStorage.setItem('playerId', our.playerId);
+    window.location.href = '/fighterSelection';
+});
+
+socket.on('error', msg => alert(msg));

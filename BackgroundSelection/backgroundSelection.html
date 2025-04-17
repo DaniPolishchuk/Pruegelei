@@ -17,12 +17,16 @@
         <div id="gameTitle">PRÜGELEI</div>
         <div id="pickedBackgroundAndFighters">
             <canvas id="player1canvas"></canvas>
-            <div id="pickedBackground"></div>
+            <div id="pickedBackground">
+                <!-- Canvas for flashing BG -->
+                <canvas id="pickedBackgroundCanvas" width="650" height="290"></canvas>
+            </div>
             <canvas id="player2canvas"></canvas>
         </div>
         <div id="backgrounds"></div>
     </div>
 </div>
+<script src="/socket.io/socket.io.js"></script>
 <script type="module" src="/BackgroundSelection/index.js"></script>
 </body>
 </html>
