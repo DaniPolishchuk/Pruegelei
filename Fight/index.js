@@ -5,7 +5,7 @@ const remoteKeys = { a: false, d: false, w: false, ArrowLeft: false, ArrowRight:
 const socket = io();
 const room = sessionStorage.getItem('room');
 const clientId = localStorage.getItem('clientId');
-socket.emit('joinRoom', { room, clientId });
+socket.emit('joinRoom', { roomName: room, clientId });
 
 
 // 3) track which animation we’re in
@@ -73,7 +73,7 @@ socket.on('remoteInput', ({ key, pressed }) => {
 
 // whenever the other client sends us their state...
 socket.on('remoteState', data => {
-    // position & velocity
+    console.log('← remoteState', data.x.toFixed(1), data.y.toFixed(1));    // position & velocity
     remoteFighter.position.x = data.x;
     remoteFighter.position.y = data.y;
     remoteFighter.velocity.x = 0;
@@ -110,13 +110,15 @@ async function setUpGame() {
     const { imageSrc, groundLevel, borderBackground } = await setBackground(bgName);
 
     // 2) apply video only if it exists
-    if (borderBackground) {
+    // Apply video only if we have a URL
+    if (typeof borderBackground === "string" && borderBackground) {
         videoSource.src = borderBackground;
-        videoElement.load();
     } else {
-        // no video: clear out any old src to prevent "null" attempts
-        videoSource.removeAttribute('src');
+        videoSource.removeAttribute("src");
     }
+
+    // Tell the <video> element to reload its sources
+    videoElement.load();
 
     groundLvl = groundLevel;
     backgroundSprite = new Sprite({
@@ -210,6 +212,7 @@ function processAttackCollision(attacker, defender, barEl) {
 
 function sendMyState() {
     const sf = localFighter;
+    console.log('→ sendMyState', sf.position.x.toFixed(1), sf.position.y.toFixed(1));
     socket.emit('state', {
         room,
         x: sf.position.x,
