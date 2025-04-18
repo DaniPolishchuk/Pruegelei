@@ -137,10 +137,14 @@ async function initSelection() {
         btn.className = "fighter";
         const cvs = document.createElement("canvas");
         cvs.className = "miniCanvas";
-        cvs.width = btn.offsetWidth;
-        cvs.height = btn.offsetHeight;
+        // 1) add to the DOM so it gets laid out
         btn.appendChild(cvs);
         grid.appendChild(btn);
+        // 2) now read its actual on‑screen size…
+        const { width, height } = cvs.getBoundingClientRect();
+        // 3) then set the internal buffer (must be integers)
+        cvs.width  = Math.floor(width);
+        cvs.height = Math.floor(height);
 
         const mf = new MiniFighter(
             cvs,
