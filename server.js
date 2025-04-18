@@ -27,7 +27,9 @@ app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'joinRoom.html')));
 app.get('/fighterSelection', (_, res) => res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html')));
 app.get('/background', (_, res) => res.sendFile(path.join(__dirname, 'BackgroundSelection', 'backgroundSelection.html')));
 app.get('/fight', (_, res) => res.sendFile(path.join(__dirname, 'Fight', 'fight.html')));
-
+app.get('/fighterSelectionLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'fighterSelection.html')));
+app.get('/backgroundLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'backgroundSelection.html')));
+app.get('/fightLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'fight.html')));
 // ────────────────────────────────────────────────────────────────────────────
 // REST endpoints
 app.get('/fighters', (_, res) => {

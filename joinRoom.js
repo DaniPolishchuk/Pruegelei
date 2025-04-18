@@ -63,4 +63,12 @@ socket.on('roomJoined', ({ room, playerAssignments }) => {
     window.location.href = '/fighterSelection';
 });
 
+document.getElementById('localModeBtn').onclick = () => {
+    sessionStorage.setItem('room', 'local');
+    sessionStorage.setItem('playerId', 1);
+    window.location.href = '/fighterSelectionLoc';
+
+};
+
+
 socket.on('error', msg => alert(msg));

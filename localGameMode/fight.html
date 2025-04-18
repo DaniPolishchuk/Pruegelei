@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Game</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/Fight/styles.css">
+</head>
+<body>
+<div class="video-container">
+    <video autoplay loop muted playsinline id="borderBackground">
+        <source id="videoSource" type="video/mp4" src=""> 
+    </video>
+    <div id="gameContainer">
+        <div class="health-bar-container">
+            <!-- player 1 health -->
+            <div id="player1HealthBar">
+                <div class="health-bar"></div>
+                <div id="player1Health"></div>
+            </div>
+            <!-- timer -->
+            <div id="timer">100</div>
+            <!-- player 2 health -->
+            <div id="player2HealthBar">
+                <div class="health-bar"></div>
+                <div id="player2Health"></div>
+            </div>
+        </div>
+        <div id="gameResult"></div>
+        <canvas></canvas>
+    </div>
+</div>
+<script src="/localGameMode/utils.js"></script>
+<script src="/localGameMode/classes.js"></script>
+<script src="/localGameMode/fight.js"></script>
+</body>
+</html>
