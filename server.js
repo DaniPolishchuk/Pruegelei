@@ -10,43 +10,51 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 const db = new Database('Fighters.db');
+
+// ────────────────────────────────────────────────────────────────────────────
+// Helpers
 function bufferToBase64(buf) {
     return `data:image/png;base64,${buf.toString('base64')}`;
 }
 
-// remember which bg each room picked
+// remembers which background was picked after “startGame”
 const lastBackground = {};
 
-// — static & HTML
+// ────────────────────────────────────────────────────────────────────────────
+// Static & HTML
 app.use(express.static(path.join(__dirname, '.')));
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'joinRoom.html')));
 app.get('/fighterSelection', (_, res) => res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html')));
 app.get('/background', (_, res) => res.sendFile(path.join(__dirname, 'BackgroundSelection', 'backgroundSelection.html')));
 app.get('/fight', (_, res) => res.sendFile(path.join(__dirname, 'Fight', 'fight.html')));
 
-// — REST endpoints
+// ────────────────────────────────────────────────────────────────────────────
+// REST endpoints
 app.get('/fighters', (_, res) => {
-    const fighters = db.prepare("SELECT * FROM Fighters").all();
+    const fighters = db.prepare('SELECT * FROM Fighters').all();
     fighters.forEach(f => {
-        ['Idle', 'Run', 'Jump', 'Fall', 'Attack1', 'Attack2', 'Attack3', 'Attack4', 'TakeHit', 'Death']
-            .forEach(k => f[k] && (f[k] = bufferToBase64(f[k])));
+        [
+            'Idle', 'Run', 'Jump', 'Fall',
+            'Attack1', 'Attack2', 'Attack3', 'Attack4',
+            'TakeHit', 'Death'
+        ].forEach(k => f[k] && (f[k] = bufferToBase64(f[k])));
     });
     res.json(fighters);
 });
+
 app.get('/backgrounds', (_, res) => {
-    const bgs = db.prepare("SELECT * FROM Backgrounds").all();
+    const bgs = db.prepare('SELECT * FROM Backgrounds').all();
     bgs.forEach(bg => {
         if (bg.BackgroundImage) bg.BackgroundImage = bufferToBase64(bg.BackgroundImage);
-        if (bg.BorderBackground) {
-            bg.BorderBackground = `/backgrounds/${encodeURIComponent(bg.Name)}/video`;
-        }
+        if (bg.BorderBackground) bg.BorderBackground = `/backgrounds/${encodeURIComponent(bg.Name)}/video`;
     });
     res.json(bgs);
 });
+
 app.get('/backgrounds/:name/video', (req, res) => {
-    const row = db.prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?")
+    const row = db.prepare('SELECT BorderBackground FROM Backgrounds WHERE Name = ?')
         .get(req.params.name);
-    if (!row || !row.BorderBackground) return res.status(404).send("Video not found");
+    if (!row || !row.BorderBackground) return res.status(404).send('Video not found');
     res.writeHead(200, {
         'Content-Type': 'video/mp4',
         'Content-Length': row.BorderBackground.length
@@ -54,8 +62,10 @@ app.get('/backgrounds/:name/video', (req, res) => {
     res.end(row.BorderBackground);
 });
 
-// — lobby & rooms
-const rooms = {}; // roomName → { players: Map<clientId,{playerId,socket}>}
+// ────────────────────────────────────────────────────────────────────────────
+// Lobby & rooms
+// rooms = { [roomName]: { players: Map<clientId, {playerId,socket,fighterName,ready}> } }
+const rooms = {};
 
 function getLobbyList() {
     return Object.entries(rooms)
@@ -63,92 +73,127 @@ function getLobbyList() {
         .filter(r => r.count < 2);
 }
 
+// ────────────────────────────────────────────────────────────────────────────
 io.on('connection', socket => {
-    //console.log('CONNECT', socket.id);
 
-    // restore after client reload
+    /* ── RESTORE (F5 on client) ─────────────────────────────────────────────── */
     socket.on('restore', clientId => {
-        for (let [roomName, info] of Object.entries(rooms)) {
+        for (const [roomName, info] of Object.entries(rooms)) {
             if (info.players.has(clientId)) {
-                let rec = info.players.get(clientId);
+                const rec = info.players.get(clientId);
                 rec.socket = socket;
                 socket.join(roomName);
+
                 socket.emit('roomJoined', {
                     room: roomName,
                     playerAssignments: Array.from(info.players.entries())
                         .map(([cid, rec]) => ({ clientId: cid, playerId: rec.playerId }))
                 });
-                // replay a finished gameStart if it already happened:
-                if (lastBackground[roomName]) {
-                    socket.emit('gameStart', { background: lastBackground[roomName] });
+
+                // send cached lobby state
+                for (const p of info.players.values()) {
+                    if (p.fighterName)
+                        socket.emit('fighterSelected', { fighterName: p.fighterName, playerId: p.playerId });
+                    socket.emit('ready', { playerId: p.playerId, ready: p.ready });
                 }
+
+                // if the match had already started, replay that too
+                if (lastBackground[roomName])
+                    socket.emit('gameStart', { background: lastBackground[roomName] });
+
                 io.emit('roomsList', getLobbyList());
                 return;
             }
         }
     });
 
+    /* ── Lobby list ─────────────────────────────────────────────────────────── */
     socket.on('getRooms', () => socket.emit('roomsList', getLobbyList()));
 
+    /* ── Create room ────────────────────────────────────────────────────────── */
     socket.on('createRoom', ({ roomName, clientId }) => {
         if (rooms[roomName]) return socket.emit('error', 'Room already exists');
-        rooms[roomName] = { players: new Map([[clientId, { playerId: 1, socket }]]) };
+
+        rooms[roomName] = {
+            players: new Map([
+                [clientId, { playerId: 1, socket, fighterName: null, ready: false }]
+            ])
+        };
+
         socket.join(roomName);
         socket.emit('roomCreated', { room: roomName, playerId: 1 });
         io.emit('roomsList', getLobbyList());
         console.log(`ROOM ${roomName} created by ${clientId}`);
     });
 
+    /* ── Join room ──────────────────────────────────────────────────────────── */
     socket.on('joinRoom', ({ roomName, clientId }) => {
         const room = rooms[roomName];
-        if (!room) {
-            return socket.emit('error', 'Room not found');
-        }
-
-        // if this clientId is new to the room, assign a slot (1 or 2)
+        if (!room) return socket.emit('error', 'Room not found');
         if (!room.players.has(clientId)) {
-            if (room.players.size >= 2) {
+            if (room.players.size >= 2)
                 return socket.emit('error', 'Room is full');
-            }
-            const newPlayerId = room.players.size + 1;
-            room.players.set(clientId, { playerId: newPlayerId, socket });
+            const newId = room.players.size + 1;
+            room.players.set(clientId, {
+                playerId: newId, socket,
+                fighterName: null, ready: false
+            });
         } else {
-            // otherwise just update the socket reference
             room.players.get(clientId).socket = socket;
         }
 
         socket.join(roomName);
 
-        // build the assignment list with rec.playerId (always defined)
-        const playerAssignments = Array.from(room.players.entries()).map(
-            ([cid, rec]) => ({ clientId: cid, playerId: rec.playerId })
-        );
+        const playerAssignments = Array.from(room.players.entries())
+            .map(([cid, rec]) => ({ clientId: cid, playerId: rec.playerId }));
 
-        // emit back to everyone in the room
         socket.emit('roomJoined', { room: roomName, playerAssignments });
+
+        // send cached lobby state to this newcomer
+        for (const p of room.players.values()) {
+            if (p.fighterName)
+                socket.emit('fighterSelected', { fighterName: p.fighterName, playerId: p.playerId });
+            socket.emit('ready', { playerId: p.playerId, ready: p.ready });
+        }
+
         socket.to(roomName).emit('playerJoined', { playerAssignments });
     });
 
-    // relay picks & ready
-    socket.on('fighterSelected', data => socket.to(data.room).emit('fighterSelected', data));
-    socket.on('ready', data => {io.in(data.room).emit('ready', data);});
+    /* ── Fighter selected ───────────────────────────────────────────────────── */
+    socket.on('fighterSelected', data => {
+        const room = rooms[data.room];
+        if (room) {
+            for (const p of room.players.values())
+                if (p.playerId === data.playerId) p.fighterName = data.fighterName;
+        }
+        socket.to(data.room).emit('fighterSelected', data);
+    });
 
-    // startGame: choose & broadcast, record for late-join
+    /* ── Ready toggle ───────────────────────────────────────────────────────── */
+    socket.on('ready', data => {
+        const room = rooms[data.room];
+        if (room) {
+            for (const p of room.players.values())
+                if (p.playerId === data.playerId) p.ready = data.ready;
+        }
+        io.in(data.room).emit('ready', data);
+    });
+
+    /* ── Start game ─────────────────────────────────────────────────────────── */
     socket.on('startGame', roomName => {
-        let rows = db.prepare("SELECT Name FROM Backgrounds").all();
-        let choice = rows[Math.floor(Math.random() * rows.length)].Name;
+        const rows = db.prepare('SELECT Name FROM Backgrounds').all();
+        const choice = rows[Math.floor(Math.random() * rows.length)].Name;
         lastBackground[roomName] = choice;
         console.log(`[SERVER] ▶ startGame for room=${roomName}, bg=${choice}`);
         io.in(roomName).emit('gameStart', { background: choice });
     });
 
+    /* ── Disconnect / cleanup ───────────────────────────────────────────────── */
     socket.on('disconnect', () => {
-        //console.log('DISCONNECT', socket.id);
-        for (let [roomName, info] of Object.entries(rooms)) {
-            for (let [cid, rec] of info.players.entries()) {
+        for (const [roomName, info] of Object.entries(rooms)) {
+            for (const [cid, rec] of info.players.entries()) {
                 if (rec.socket === socket) rec.socket = null;
             }
-            // if empty, garbage‐collect after 10s
             if ([...info.players.values()].every(r => r.socket === null)) {
                 setTimeout(() => {
                     if ([...info.players.values()].every(r => r.socket === null)) {
@@ -161,20 +206,13 @@ io.on('connection', socket => {
             }
         }
     });
-    // relay any “state” onto everyone else in the room
-    socket.on('state', data => {
-        socket.to(data.room).emit('remoteState', data);
-    });
-    socket.on('playerInput', ({ roomName, key, pressed }) => {
-        socket.to(roomName).emit('remoteInput', { key, pressed });
-    });
-    socket.on('playerAttack', ({ roomName }) => {
-        socket.to(roomName).emit('remoteAttack');
-    });
-    socket.on('hit', ({ roomName, attackerId, defenderId, damage }) => {
-        io.to(roomName).emit('confirmedHit', { defenderId, damage });
-    });
 
-});
+    /* ── In‑game relays (unchanged) ─────────────────────────────────────────── */
+    socket.on('state', data => socket.to(data.room).emit('remoteState', data));
+    socket.on('playerInput', ({ roomName, key, pressed }) => socket.to(roomName).emit('remoteInput', { key, pressed }));
+    socket.on('playerAttack', ({ roomName }) => socket.to(roomName).emit('remoteAttack'));
+    socket.on('hit', ({ roomName, defenderId, damage }) => io.to(roomName).emit('confirmedHit', { defenderId, damage }));
 
-server.listen(5001, () => console.log('Server listening on 127.0.0.0:5001'));
+}); // io.on('connection')
+
+server.listen(5001, () => console.log('Server listening on 127.0.0.1:5001'));
