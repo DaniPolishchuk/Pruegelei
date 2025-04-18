@@ -1,5 +1,8 @@
-const keys = { a: false, d: false, w: false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
-const remoteKeys = { a: false, d: false, w: false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+const keys = { a: false, d: false, w: false, s: false, '1':false, '2': false, '3': false, '4': false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+const remoteKeys = { a: false, d: false, w: false, s: false, '1': false, '2': false, '3': false, '4': false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+
+const DEBUG = true;          // ◀ flip to false when you’re done
+function dlog(...args) { if (DEBUG) console.log(...args); }
 
 // 1) connect & join
 const socket = io();
@@ -53,13 +56,30 @@ const player2HealthBar = document.querySelector("#player2Health");
 const gravity = 0.5;
 
 // Create Fighter instances (from classes.js)
-window.addEventListener('keydown', e => {
-    if (keys[e.key] === false) {
-        keys[e.key] = true;
-        socket.emit('playerInput', { roomName: room, key: e.key, pressed: true });
+window.addEventListener("keydown", e => {
+    if (e.repeat) return;
+
+    if (e.key === 's') {
+        keys.s = true;
+        localFighter.isBlocking = true;
+        sendMyState();
     }
+
+    // mark key pressed
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+    socket.emit("playerInput", { roomName: room, key: e.key, pressed: true });
+
+    if (['1', '2', '3', '4'].includes(e.key))
+        startAttack(e.key);
 });
+
+
 window.addEventListener('keyup', e => {
+    if (e.key === 's') {
+        keys.s = false;
+        localFighter.isBlocking = false;
+        sendMyState();
+    }
     if (keys[e.key] === true) {
         keys[e.key] = false;
         socket.emit('playerInput', { roomName: room, key: e.key, pressed: false });
@@ -71,37 +91,100 @@ socket.on('remoteInput', ({ key, pressed }) => {
     if (remoteKeys.hasOwnProperty(key)) remoteKeys[key] = pressed;
 });
 
+socket.on("confirmedHit", ({ defenderId, damage }) => {
+    const defender =
+        defenderId === myPlayerId ? localFighter : remoteFighter;
+
+    defender.takeHit(damage);          // plays take‑hit / death frames
+    const bar = defenderId === 1 ? player1HealthBar : player2HealthBar;
+    bar.style.width = Math.max(defender.health, 0) + "%";
+});
+
+// socket.on('remoteAttack', () => {
+//     console.log('[REMOTE ATTACK] Received from server');
+//     const style = remoteFighter.attackStyle || "style1";
+//     switch (style) {
+//         case "style1": remoteFighter.switchSprite("attack1"); break;
+//         case "style2": remoteFighter.switchSprite("attack2"); break;
+//         case "style3": remoteFighter.switchSprite("attack3"); break;
+//         case "style4": remoteFighter.switchSprite("attack4"); break;
+//     }
+//     remoteFighter.isAttacking = true;
+
+
+//     // Force a collision check immediately (so remote fighter can deal damage)
+//     if (myPlayerId === 2) {
+//         processAttackCollision(remoteFighter, localFighter, player1HealthBar);
+//     } else {
+//         processAttackCollision(remoteFighter, localFighter, player2HealthBar);
+//     }
+// });
+
+
+
 // whenever the other client sends us their state...
-socket.on('remoteState', data => {
-    console.log('← remoteState', data.x.toFixed(1), data.y.toFixed(1));    // position & velocity
+socket.on("remoteState", data => {
+    // 1) position & flip
     remoteFighter.position.x = data.x;
     remoteFighter.position.y = data.y;
-    remoteFighter.velocity.x = 0;
-    remoteFighter.velocity.y = 0;
     remoteFighter.flip = data.flip;
 
-    // animation frame
-    if (data.sprite && remoteFighter.sprites[data.sprite]) {
-        remoteFighter.image = remoteFighter.sprites[data.sprite].image;
-        remoteFighter.framesMax = remoteFighter.sprites[data.sprite].framesMax;
+    // 2) if we're mid‑attack, ignore later idle/run updates
+    if (remoteFighter.isAttacking && !data.attack) return;
+
+    // 3) normal sprite copy (safe)
+    if (data.sprite && remoteFighter.sprites?.[data.sprite]) {
+        const spr = remoteFighter.sprites[data.sprite];
+        remoteFighter.image = spr.image;
+        remoteFighter.framesMax = spr.framesMax;
         remoteFighter.framesCurrent = data.frame;
     }
 
-    // if they’re attacking, trigger it locally
+    // 4) attack handling (code from section 1)
     if (data.attack) {
-        remoteFighter.attackStyle = data.attackStyle;
-        remoteFighter.attackBox = remoteFighter.sprites[data.sprite].attackBox;
-        remoteFighter.attack();
+        if (!remoteFighter.isAttacking) {
+            const style = data.attackStyle || "style1";
+            const spriteKey = `attack${style.slice(-1)}`;
+            if (remoteFighter.sprites?.[spriteKey]) {
+                remoteFighter.switchSprite(spriteKey);
+                remoteFighter.attackBox   = remoteFighter.sprites[spriteKey].attackBox;
+                remoteFighter.attackFrames = remoteFighter.sprites[spriteKey].framesMax;
+                remoteFighter.isAttacking  = true;
+            }
+        }
     }
+
 
     // sync health bar
     remoteFighter.health = data.health;
+    remoteFighter.isBlocking = !!data.block;
     const bar = myPlayerId === 1
         ? document.querySelector('#player2Health')
         : document.querySelector('#player1Health');
     bar.style.width = Math.max(data.health, 0) + '%';
 });
 
+function startAttack(styleIdx) {
+    const spriteKey = `attack${styleIdx}`;
+    if(!localFighter.sprites[spriteKey]?.imageSrc) return;
+    localFighter.attackStyle = `style${styleIdx}`;
+    localFighter.switchSprite(spriteKey);
+    localFighter.attackBox = localFighter.sprites[spriteKey].attackBox;
+    localFighter.attackFrames = localFighter.sprites[spriteKey].framesMax;
+    localFighter.isAttacking = true;
+    localFighter.hitLanded = false;
+    dlog(`[LOCAL] key ${styleIdx} → ${spriteKey}`);
+    sendMyState();
+}
+
+
+function remotePressed(leftKey, rightKey) {
+    return {
+        left: remoteKeys[leftKey] || remoteKeys.ArrowLeft,
+        right: remoteKeys[rightKey] || remoteKeys.ArrowRight,
+        jump: remoteKeys.w || remoteKeys.ArrowUp
+    };
+}
 
 // Main setup
 async function setUpGame() {
@@ -166,8 +249,10 @@ function calculateCamera() {
 
 // Resolve horizontal movement & sprites
 function updateHorizontalMovement(pl, other, left, right, lk, rk) {
+    if (pl.isAttacking || pl.isBlocking) return;
     let canL = left && pl.position.x > 0;
     let canR = right && pl.position.x + pl.width < canvas.width;
+
 
     // simple “no overlap” when both on ground
     if (
@@ -192,27 +277,39 @@ function updateHorizontalMovement(pl, other, left, right, lk, rk) {
 
 // Update jump/fall sprite
 function updateVerticalSprite(pl) {
+    if (pl.isAttacking) return;
     if (pl.velocity.y < 0) pl.switchSprite("jump");
     else if (pl.velocity.y > 0) pl.switchSprite("fall");
 }
 
 // Attack collision / health
 function processAttackCollision(attacker, defender, barEl) {
-    if (rectangularCollision(attacker, defender)) {
-        if (attacker.isAttacking && attacker.framesCurrent >= attacker.attackFrames / 2) {
-            defender.takeHit(attacker.damage);
-            attacker.isAttacking = false;
-            barEl.style.width = Math.max(defender.health, 0) + "%";
+    if (attacker.isAttacking && !attacker.hitLanded && attacker.framesCurrent >= attacker.attackFrames / 2) {
+        const collision = rectangularCollision(attacker, defender);
+
+        dlog(
+            `[CHECK] ${attacker === localFighter ? "LOCAL" : "REMOTE"} vs ` +
+            `${defender === localFighter ? "LOCAL" : "REMOTE"}`,
+            " style=", attacker.attackStyle,
+            " frame=", attacker.framesCurrent
+        );
+
+        if (collision && attacker === localFighter && attacker.isAttacking) {
+            socket.emit('hit', {
+                roomName: room,
+                attackerId: myPlayerId,
+                defenderId: myPlayerId === 1 ? 2 : 1,
+                damage: attacker.damage
+            });
+            attacker.hitLanded = true;
         }
-    }
-    if (attacker.isAttacking && attacker.framesCurrent >= attacker.attackFrames / 2) {
-        attacker.isAttacking = false;
     }
 }
 
+
 function sendMyState() {
     const sf = localFighter;
-    console.log('→ sendMyState', sf.position.x.toFixed(1), sf.position.y.toFixed(1));
+    //console.log('→ sendMyState', sf.position.x.toFixed(1), sf.position.y.toFixed(1));
     socket.emit('state', {
         room,
         x: sf.position.x,
@@ -224,6 +321,7 @@ function sendMyState() {
         frame: sf.framesCurrent,
         attack: sf.isAttacking,
         attackStyle: sf.attackStyle,
+        block: sf.isBlocking,
         health: sf.health
     });
 }
@@ -291,6 +389,9 @@ function animate() {
     const other = myPlayerId === 1 ? player2 : player1;
     const localMap = keys;
     const otherMap = remoteKeys;
+
+    localFighter.isBlocking = keys.s || localFighter.isBlocking;   // keyboard + gamepad
+    remoteFighter.isBlocking = remoteKeys.s || remoteFighter.isBlocking;
 
     // 1) Camera & clear
     const { scale, cameraX } = calculateCamera();
@@ -367,14 +468,3 @@ async function initializeGame() {
     // kick off the timer and first frame
     //animate();
 }
-
-// === Keyboard Listeners ===
-window.addEventListener("keydown", e => {
-    if (e.repeat) return;
-    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
-});
-
-window.addEventListener("keyup", e => {
-    if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
-});
-

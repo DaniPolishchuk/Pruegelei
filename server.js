@@ -64,7 +64,7 @@ function getLobbyList() {
 }
 
 io.on('connection', socket => {
-    console.log('CONNECT', socket.id);
+    //console.log('CONNECT', socket.id);
 
     // restore after client reload
     socket.on('restore', clientId => {
@@ -143,7 +143,7 @@ io.on('connection', socket => {
     });
 
     socket.on('disconnect', () => {
-        console.log('DISCONNECT', socket.id);
+        //console.log('DISCONNECT', socket.id);
         for (let [roomName, info] of Object.entries(rooms)) {
             for (let [cid, rec] of info.players.entries()) {
                 if (rec.socket === socket) rec.socket = null;
@@ -168,6 +168,13 @@ io.on('connection', socket => {
     socket.on('playerInput', ({ roomName, key, pressed }) => {
         socket.to(roomName).emit('remoteInput', { key, pressed });
     });
+    socket.on('playerAttack', ({ roomName }) => {
+        socket.to(roomName).emit('remoteAttack');
+    });
+    socket.on('hit', ({ roomName, attackerId, defenderId, damage }) => {
+        io.to(roomName).emit('confirmedHit', { defenderId, damage });
+    });
+
 });
 
-server.listen(5001, () => console.log('Server listening on :5001'));
+server.listen(5001, () => console.log('Server listening on 127.0.0.0:5001'));

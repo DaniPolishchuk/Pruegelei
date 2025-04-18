@@ -5,11 +5,14 @@ class Sprite {
         this.height = height;
         this.image = new Image();
         this.imageLoaded = false;
+        this.hitLanded = false;
         this.scale = scale;
         this.image.onload = () => {
             this.imageLoaded = true;
         };
-
+        this.image.onload = () => {
+            this.imageLoaded = true;
+            };
         this.image.src = imageSrc;
     }
 
@@ -49,6 +52,8 @@ class Fighter {
         this.attackStyle = "style1";
         this.health = 100;
         this.dead = false;
+        this.isAttacking = false;
+        this.hitLanded = false;
         this.hitbox = {
             position: {
                 x: this.position.x,
@@ -124,6 +129,7 @@ class Fighter {
                     break;
             }
             this.isAttacking = true;
+            this.hitLanded   = false;
         }
     }
 
@@ -138,6 +144,8 @@ class Fighter {
                     this.framesCurrent++;
                 } else {
                     this.framesCurrent = 0;
+                    // ─── attack just completed ───────────────────────
+                    if (this.isAttacking) this.isAttacking = false;
                 }
             }
         }
@@ -203,11 +211,10 @@ class Fighter {
     }
 
     switchSprite(sprite) {
-        const origSwitch = Fighter.prototype.switchSprite;
-        Fighter.prototype.switchSprite = function (sprite) {
-            this.currentSpriteName = sprite;
-            origSwitch.call(this, sprite);
-        };
+        if (this.sprites[sprite] && this.image === this.sprites[sprite].image)
+            return;
+
+        this.currentSpriteName = sprite;
 
         if (this.image === this.sprites.death.image
             && this.framesCurrent === this.sprites.death.framesMax - 1) {
@@ -234,12 +241,9 @@ class Fighter {
 
         // Switch sprite
         if (this.sprites[sprite]) {
-            this.image = this.sprites[sprite].image;
+            this.image     = this.sprites[sprite].image;
             this.framesMax = this.sprites[sprite].framesMax;
-            this.framesCurrent = 0;
-        }
-
-        // Capture current sprite for networking
-        this.currentSpriteName = sprite;
+            this.framesCurrent = 0;        // reset only **when we actually change**
+            }
     }
 }
