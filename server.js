@@ -100,28 +100,38 @@ io.on('connection', socket => {
     });
 
     socket.on('joinRoom', ({ roomName, clientId }) => {
-        let info = rooms[roomName];
-        if (!info) return socket.emit('error', 'Room not found');
-        if (info.players.size >= 2) return socket.emit('error', 'Room is full');
-        let playerId = info.players.size + 1;
-        info.players.set(clientId, { playerId, socket });
-        socket.join(roomName);
-        io.in(roomName).emit('roomJoined', {
-            room: roomName,
-            playerAssignments: Array.from(info.players.entries())
-                .map(([cid, rec]) => ({ clientId: cid, playerId: rec.playerId }))
-        });
-        // if this room already ran startGame, replay it to the late-joiner
-        if (lastBackground[roomName]) {
-            socket.emit('gameStart', { background: lastBackground[roomName] });
+        const room = rooms[roomName];
+        if (!room) {
+            return socket.emit('error', 'Room not found');
         }
-        io.emit('roomsList', getLobbyList());
-        console.log(`JOIN ${roomName}: ${clientId} as ${playerId}`);
+
+        // if this clientId is new to the room, assign a slot (1 or 2)
+        if (!room.players.has(clientId)) {
+            if (room.players.size >= 2) {
+                return socket.emit('error', 'Room is full');
+            }
+            const newPlayerId = room.players.size + 1;
+            room.players.set(clientId, { playerId: newPlayerId, socket });
+        } else {
+            // otherwise just update the socket reference
+            room.players.get(clientId).socket = socket;
+        }
+
+        socket.join(roomName);
+
+        // build the assignment list with rec.playerId (always defined)
+        const playerAssignments = Array.from(room.players.entries()).map(
+            ([cid, rec]) => ({ clientId: cid, playerId: rec.playerId })
+        );
+
+        // emit back to everyone in the room
+        socket.emit('roomJoined', { room: roomName, playerAssignments });
+        socket.to(roomName).emit('playerJoined', { playerAssignments });
     });
 
     // relay picks & ready
     socket.on('fighterSelected', data => socket.to(data.room).emit('fighterSelected', data));
-    socket.on('ready', data => socket.to(data.room).emit('ready', data));
+    socket.on('ready', data => {io.in(data.room).emit('ready', data);});
 
     // startGame: choose & broadcast, record for late-join
     socket.on('startGame', roomName => {
@@ -154,6 +164,9 @@ io.on('connection', socket => {
     // relay any “state” onto everyone else in the room
     socket.on('state', data => {
         socket.to(data.room).emit('remoteState', data);
+    });
+    socket.on('playerInput', ({ roomName, key, pressed }) => {
+        socket.to(roomName).emit('remoteInput', { key, pressed });
     });
 });
 

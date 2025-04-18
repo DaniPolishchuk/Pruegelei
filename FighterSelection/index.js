@@ -1,19 +1,20 @@
 // /FighterSelection/index.js
 
 // ————————————————————————————————————————————————————————————————
-// 1) Load & restore your Socket‑IO connection
-// (make sure your HTML includes: <script src="/socket.io/socket.io.js"></script>)
+// 1) Connect and *join* your existing room
 const socket = io();
 let clientId = localStorage.getItem("clientId");
 if (!clientId) {
-    clientId = Date.now() + "_" + Math.random().toString(36).slice(2);
-    localStorage.setItem("clientId", clientId);
-}
-socket.emit("restore", clientId);
+        clientId = Date.now() +  "_" + Math.random().toString(36).slice(2);
+        localStorage.setItem("clientId", clientId);
+    }
+const room = sessionStorage.getItem("room");
+socket.on("connect", () => {
+      socket.emit("joinRoom", { roomName: room, clientId });
+    });
 
 // ————————————————————————————————————————————————————————————————
 // 2) Wait for the server to tell us our room & playerId
-const room = sessionStorage.getItem("room");
 let myId = null;
 socket.on("roomJoined", ({ playerAssignments }) => {
     const me = playerAssignments.find(p => p.clientId === clientId);
@@ -112,6 +113,7 @@ async function initSelection() {
     startBtn.style.visibility = "hidden";
 
     // disable the other player’s ready
+    console.log(myId);
     ready1Btn.disabled = (myId !== 1);
     ready2Btn.disabled = (myId !== 2);
 
@@ -197,6 +199,8 @@ async function initSelection() {
         if (playerId === myId) readyLocal = ready;
         else readyRemote = ready;
 
+        console.log("orange");
+
         const btn = (playerId === 1 ? ready1Btn : ready2Btn);
         btn.style.backgroundColor = ready ? "orange" : "black";
         btn.style.color = ready ? "black" : "orange";
@@ -208,6 +212,7 @@ async function initSelection() {
     ready1Btn.onclick = () => {
         if (myId !== 1 || !selLocal) return;
         readyLocal = !readyLocal;
+        console.log("orange");
         socket.emit("ready", { room, playerId: 1, ready: readyLocal });
         refreshStart();
     };

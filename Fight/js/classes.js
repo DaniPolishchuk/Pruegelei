@@ -203,6 +203,12 @@ class Fighter {
     }
 
     switchSprite(sprite) {
+        const origSwitch = Fighter.prototype.switchSprite;
+        Fighter.prototype.switchSprite = function (sprite) {
+            this.currentSpriteName = sprite;
+            origSwitch.call(this, sprite);
+        };
+
         if (this.image === this.sprites.death.image
             && this.framesCurrent === this.sprites.death.framesMax - 1) {
             this.dead = true;

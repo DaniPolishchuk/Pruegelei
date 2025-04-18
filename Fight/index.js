@@ -1,3 +1,6 @@
+const keys = { a: false, d: false, w: false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+const remoteKeys = { a: false, d: false, w: false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
+
 // 1) connect & join
 const socket = io();
 const room = sessionStorage.getItem('room');
@@ -24,7 +27,7 @@ const MOVE_SPEED = canvas.width / 275;
 const JUMP_VELOCITY = canvas.height / 45;
 
 // 2) decide who is “me” vs “them”
-const myPlayerId = Number(sessionStorage.getItem('myPlayerId')); // 1 or 2
+const myPlayerId = Number(sessionStorage.getItem('playerId')); // 1 or 2
 const player1 = new Fighter({
     position: { x: canvas.width * 0.25, y: canvas.height / 5 },
     velocity: { x: 0, y: 0 }
@@ -50,41 +53,22 @@ const player2HealthBar = document.querySelector("#player2Health");
 const gravity = 0.5;
 
 // Create Fighter instances (from classes.js)
-
-// Keyboard state
-const keys = {
-    s: false, a: false, d: false,
-    ArrowLeft: false, ArrowRight: false, ArrowDown: false
-};
-// whenever the other client sends us their state...
-socket.on('remoteState', data => {
-    // position & velocity
-    remoteFighter.position.x = data.x;
-    remoteFighter.position.y = data.y;
-    remoteFighter.velocity.x = data.vx;
-    remoteFighter.velocity.y = data.vy;
-    remoteFighter.flip = data.flip;
-
-    // animation frame
-    if (data.sprite && remoteFighter.sprites[data.sprite]) {
-        remoteFighter.image = remoteFighter.sprites[data.sprite].image;
-        remoteFighter.framesMax = remoteFighter.sprites[data.sprite].framesMax;
-        remoteFighter.framesCurrent = data.frame;
+window.addEventListener('keydown', e => {
+    if (keys[e.key] === false) {
+        keys[e.key] = true;
+        socket.emit('playerInput', { roomName: room, key: e.key, pressed: true });
     }
-
-    // if they’re attacking, trigger it locally
-    if (data.attack) {
-        remoteFighter.attackStyle = data.attackStyle;
-        remoteFighter.attackBox = remoteFighter.sprites[data.sprite].attackBox;
-        remoteFighter.attack();
+});
+window.addEventListener('keyup', e => {
+    if (keys[e.key] === true) {
+        keys[e.key] = false;
+        socket.emit('playerInput', { roomName: room, key: e.key, pressed: false });
     }
+});
 
-    // sync health bar
-    remoteFighter.health = data.health;
-    const bar = myPlayerId === 1
-        ? document.querySelector('#player2Health')
-        : document.querySelector('#player1Health');
-    bar.style.width = Math.max(data.health, 0) + '%';
+// when your buddy presses/releases, update `remoteKeys`
+socket.on('remoteInput', ({ key, pressed }) => {
+    if (remoteKeys.hasOwnProperty(key)) remoteKeys[key] = pressed;
 });
 
 // whenever the other client sends us their state...
@@ -300,98 +284,80 @@ function pollGamepadInputs() {
 // Main render loop
 function animate() {
     requestAnimationFrame(animate);
+    const local = myPlayerId === 1 ? player1 : player2;
+    const other = myPlayerId === 1 ? player2 : player1;
+    const localMap = keys;
+    const otherMap = remoteKeys;
 
+    // 1) Camera & clear
     const { scale, cameraX } = calculateCamera();
-
     offscreenCtx.fillStyle = "black";
     offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
 
+    // 2) Apply camera transforms
     offscreenCtx.save();
     offscreenCtx.translate(offscreenCanvas.width / 2, offscreenCanvas.height);
     offscreenCtx.scale(scale, scale);
     offscreenCtx.translate(-cameraX, -canvas.height);
 
-    // background + fighters
+    // 3) Draw background & both fighters
     backgroundSprite.draw(offscreenCtx);
     player1.update(offscreenCtx);
     player2.update(offscreenCtx);
 
-    // face‐off
+    // 4) Face‑off and zero out old horizontal velocities
     if (player1.position.x < player2.position.x) {
-        player1.flip = false; player2.flip = true;
+        player1.flip = false;
+        player2.flip = true;
     } else {
-        player1.flip = true; player2.flip = false;
+        player1.flip = true;
+        player2.flip = false;
     }
     player1.velocity.x = 0;
     player2.velocity.x = 0;
 
-    // ground collisions
-    function resolveVerticalCollisionBetweenFighters(f, other) {
-        if (f.velocity.y <= 0) return;
-        const hit = f.hitbox, oh = other.hitbox;
-        if (
-            hit.position.x < oh.position.x + oh.width &&
-            hit.position.x + hit.width > oh.position.x &&
-            hit.position.y + hit.height > oh.position.y &&
-            hit.position.y < oh.position.y
-        ) {
-            // land on top
-            hit.position.y = oh.position.y - hit.height;
-            f.velocity.y = 0;
-
-            // slip off slightly
-            const fCenter = hit.position.x + hit.width / 2;
-            const oCenter = oh.position.x + oh.width / 2;
-            f.velocity.x = fCenter < oCenter ? -SLIP_SPEED : SLIP_SPEED;
-        }
-    }
-
-    // gamepad polling if you want...
+    // 5) Poll gamepad
     const { gp1State, gp2State } = pollGamepadInputs();
 
-    // P1
+    // —— LOCAL PLAYER INPUT —— 
     updateHorizontalMovement(
-        player1, player2,
-        keys.a || gp1State.left,
-        keys.d || gp1State.right,
-        "a", "d"
+        local, other,
+        localMap.a, localMap.d,   // left/right pressed?
+        "a", "d"                   // which keys they map to
     );
-    if ((gp1State.jump || false) && player1.position.y + player1.height >= groundLvl) {
-        player1.velocity.y = -JUMP_VELOCITY;
+    if (localMap.w && local.position.y + local.height >= groundLvl) {
+        local.velocity.y = -JUMP_VELOCITY;  // jump
     }
-    updateVerticalSprite(player1);
-    if (gp1State.attack && !prevGp1Attack) player1.attack();
-    prevGp1Attack = gp1State.attack;
+    updateVerticalSprite(local);          // switch to jump/fall sprite
 
-    // P2
+    // —— REMOTE PLAYER INPUT ——
     updateHorizontalMovement(
-        player2, player1,
-        keys.ArrowLeft || gp2State.left,
-        keys.ArrowRight || gp2State.right,
+        other, local,
+        otherMap.ArrowLeft, otherMap.ArrowRight,
         "ArrowLeft", "ArrowRight"
     );
-    if ((gp2State.jump || false) && player2.position.y + player2.height >= groundLvl) {
-        player2.velocity.y = -JUMP_VELOCITY;
+    if (otherMap.ArrowUp && other.position.y + other.height >= groundLvl) {
+        other.velocity.y = -JUMP_VELOCITY;
     }
-    updateVerticalSprite(player2);
-    if (gp2State.attack && !prevGp2Attack) player2.attack();
-    prevGp2Attack = gp2State.attack;
+    updateVerticalSprite(other);
 
-    // attacks
+    // 7) ATTACK COLLISIONS
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
 
-    // win condition
+    // 8) WIN CONDITION
     if (player1.health <= 0 || player2.health <= 0) {
         clearTimeout(timerID);
         determineWinner(player1, player2, timerID);
     }
 
+    // 9) Un‑do camera, draw to screen, and sync up your state
     offscreenCtx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(offscreenCanvas, 0, 0);
     sendMyState();
 }
+
 
 // Initialize fighters & damage, then fire off the loop
 async function initializeGame() {
@@ -405,19 +371,16 @@ async function initializeGame() {
         determineDamage(player2)
     ]);
     // kick off the timer and first frame
-    animate();
+    //animate();
 }
 
 // === Keyboard Listeners ===
-window.addEventListener("keydown", (e) => {
+window.addEventListener("keydown", e => {
     if (e.repeat) return;
-    if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = true;
-    }
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
 });
 
-window.addEventListener("keyup", (e) => {
-    if (keys.hasOwnProperty(e.key)) {
-        keys[e.key] = false;
-    }
+window.addEventListener("keyup", e => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
 });
+
