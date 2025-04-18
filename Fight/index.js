@@ -76,8 +76,8 @@ socket.on('remoteState', data => {
     // position & velocity
     remoteFighter.position.x = data.x;
     remoteFighter.position.y = data.y;
-    remoteFighter.velocity.x = data.vx;
-    remoteFighter.velocity.y = data.vy;
+    remoteFighter.velocity.x = 0;
+    remoteFighter.velocity.y = 0;
     remoteFighter.flip = data.flip;
 
     // animation frame
@@ -330,16 +330,7 @@ function animate() {
     }
     updateVerticalSprite(local);          // switch to jump/fall sprite
 
-    // —— REMOTE PLAYER INPUT ——
-    updateHorizontalMovement(
-        other, local,
-        otherMap.ArrowLeft, otherMap.ArrowRight,
-        "ArrowLeft", "ArrowRight"
-    );
-    if (otherMap.ArrowUp && other.position.y + other.height >= groundLvl) {
-        other.velocity.y = -JUMP_VELOCITY;
-    }
-    updateVerticalSprite(other);
+    
 
     // 7) ATTACK COLLISIONS
     processAttackCollision(player1, player2, player2HealthBar);
