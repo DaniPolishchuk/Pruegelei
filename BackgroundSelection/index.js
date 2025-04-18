@@ -133,6 +133,7 @@
         const displayCanvas = document.getElementById("pickedBackgroundCanvas");
         const ctx = displayCanvas.getContext("2d");
         const W = displayCanvas.width, H = displayCanvas.height;
+        sessionStorage.setItem("background", background);
 
         const clearThumbs = () => thumbs.forEach(i => i.classList.remove("temp-brightness"));
         const clearCanvas = () => ctx.clearRect(0, 0, W, H);

@@ -151,6 +151,10 @@ io.on('connection', socket => {
             }
         }
     });
+    // relay any “state” onto everyone else in the room
+    socket.on('state', data => {
+        socket.to(data.room).emit('remoteState', data);
+    });
 });
 
 server.listen(5001, () => console.log('Server listening on :5001'));
