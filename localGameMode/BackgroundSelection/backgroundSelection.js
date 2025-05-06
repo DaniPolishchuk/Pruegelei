@@ -1,24 +1,12 @@
-import {player1, player2} from "../localGameMode/fighterSelection.js";
-//import { getBackgrounds, getFighters } from "../Fight/js/utils.js";
+import {player1, player2} from "../FighterSelection/fighterSelection.js";
+import { getBackgrounds, getFighters } from "../../Fight/js/utils.js";
 
-const bgs = document.getElementById("backgrounds");
+export const bgs = document.getElementById("backgrounds");
 
-async function getFighters() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/fighters");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching fighters:", error);
-        return [];
-    }
-}
-
-async function setFighters() {
+export async function setFighters() {
     const fighterName1 = sessionStorage.getItem("player1");
     const fighterName2 = sessionStorage.getItem("player2");
+    console.log(fighterName1, fighterName2);
 
     getFighters().then(fighters => {
         const fighter1 = fighters.find(f => f.Name === fighterName1);
@@ -42,27 +30,14 @@ async function setFighters() {
     });
 }
 
-function animate() {
+export function animate() {
     window.requestAnimationFrame(animate);
     player1.update();
     player2.update();
 }
 
-async function getBackgrounds() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/backgrounds");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching backgrounds:", error);
-        return [];
-    }
-}
-
 // Populate the #backgrounds container with your background images
-async function setBackgrounds() {
+export async function setBackgrounds() {
     getBackgrounds().then(backgrounds => {
         for (const background of backgrounds) {
             let newImage = document.createElement("img");

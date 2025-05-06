@@ -1,12 +1,12 @@
 {
-  "name": "FighterProjekt",
+  "name": "Prügelei",
   "version": "1.0.0",
   "description": "",
-  "main": "Fight/index.js",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "private": true,
+  "type": "module",
   "dependencies": {
     "better-sqlite3": "^11.8.1",
     "cors": "^2.8.5",

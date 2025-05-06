@@ -1,9 +1,12 @@
 // server.js
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const Database = require('better-sqlite3');
-const { Server } = require('socket.io');
+import express from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
+import path from 'path';
+import Database from 'better-sqlite3';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const app = express();
 const server = http.createServer(app);
@@ -27,19 +30,52 @@ app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'joinRoom.html')));
 app.get('/fighterSelection', (_, res) => res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html')));
 app.get('/background', (_, res) => res.sendFile(path.join(__dirname, 'BackgroundSelection', 'backgroundSelection.html')));
 app.get('/fight', (_, res) => res.sendFile(path.join(__dirname, 'Fight', 'fight.html')));
-app.get('/fighterSelectionLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'fighterSelection.html')));
-app.get('/backgroundLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'backgroundSelection.html')));
-app.get('/fightLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode', 'fight.html')));
+app.get('/fighterSelectionLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode/FighterSelection', 'fighterSelection.html')));
+app.get('/backgroundLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode/BackgroundSelection', 'backgroundSelection.html')));
+app.get('/fightLoc', (_, res) => res.sendFile(path.join(__dirname, 'localGameMode/Fight', 'fight.html')));
 // ────────────────────────────────────────────────────────────────────────────
 // REST endpoints
 app.get('/fighters', (_, res) => {
     const fighters = db.prepare('SELECT * FROM Fighters').all();
-    fighters.forEach(f => {
-        [
-            'Idle', 'Run', 'Jump', 'Fall',
-            'Attack1', 'Attack2', 'Attack3', 'Attack4',
-            'TakeHit', 'Death'
-        ].forEach(k => f[k] && (f[k] = bufferToBase64(f[k])));
+    //fighters.forEach(f => {
+    //    [
+    //        'Idle', 'Run', 'Jump', 'Fall',
+    //        'Attack1', 'Attack2', 'Attack3', 'Attack4',
+    //        'TakeHit', 'Death'
+    //    ].forEach(k => f[k] && (f[k] = bufferToBase64(f[k])));
+    //});
+    fighters.forEach(fighter => {
+        // Convert valid images from BLOB to Base64
+        if (fighter.Idle) fighter.Idle = bufferToBase64(fighter.Idle);
+        if (fighter.Run) fighter.Run = bufferToBase64(fighter.Run);
+        if (fighter.Jump) fighter.Jump = bufferToBase64(fighter.Jump);
+        if (fighter.Fall) fighter.Fall = bufferToBase64(fighter.Fall);
+        if (fighter.Attack1) fighter.Attack1 = bufferToBase64(fighter.Attack1);
+        if (fighter.Attack2) fighter.Attack2 = bufferToBase64(fighter.Attack2);
+        if (fighter.Attack3) fighter.Attack3 = bufferToBase64(fighter.Attack3);
+        if (fighter.Attack4) fighter.Attack4 = bufferToBase64(fighter.Attack4);
+        if (fighter.TakeHit) fighter.TakeHit = bufferToBase64(fighter.TakeHit);
+        if (fighter.Death) fighter.Death = bufferToBase64(fighter.Death);
+
+        // Ensure Attack2, Attack3, and Attack4 use valid images
+        if (!fighter.Attack2) {
+            fighter.Attack2 = fighter.Attack1;
+            fighter.Attack2Frames = fighter.Attack1Frames;
+            fighter.Attack2Width = fighter.Attack1Width;
+            fighter.Attack2Height = fighter.Attack1Height;
+        }
+        if (!fighter.Attack3){
+            fighter.Attack3 = fighter.Attack2;
+            fighter.Attack3Frames = fighter.Attack2Frames;
+            fighter.Attack3Width = fighter.Attack2Width;
+            fighter.Attack3Height = fighter.Attack2Height;
+        }
+        if (!fighter.Attack4){
+            fighter.Attack4 = fighter.Attack3;
+            fighter.Attack4Frames = fighter.Attack3Frames;
+            fighter.Attack4Width = fighter.Attack3Width;
+            fighter.Attack4Height = fighter.Attack3Height;
+        }
     });
     res.json(fighters);
 });
@@ -162,13 +198,8 @@ io.on('connection', socket => {
     });
 
     /* ── Fighter selected ───────────────────────────────────────────────────── */
-    socket.on('fighterSelected', data => {
-        const room = rooms[data.room];
-        if (room) {
-            for (const p of room.players.values())
-                if (p.playerId === data.playerId) p.fighterName = data.fighterName;
-        }
-        socket.to(data.room).emit('fighterSelected', data);
+    socket.on('fighterSelected', ({ room, fighterName, playerId }) => {
+        io.in(room).emit("fighterSelected", { fighterName, playerId });
     });
 
     /* ── Ready toggle ───────────────────────────────────────────────────────── */
@@ -182,12 +213,12 @@ io.on('connection', socket => {
     });
 
     /* ── Start game ─────────────────────────────────────────────────────────── */
-    socket.on('startGame', roomName => {
+    socket.on('startGame', room=> {
         const rows = db.prepare('SELECT Name FROM Backgrounds').all();
         const choice = rows[Math.floor(Math.random() * rows.length)].Name;
-        lastBackground[roomName] = choice;
-        console.log(`[SERVER] ▶ startGame for room=${roomName}, bg=${choice}`);
-        io.in(roomName).emit('gameStart', { background: choice });
+        lastBackground[room] = choice;
+        console.log(`[SERVER] ▶ startGame for room=${room}, bg=${choice}`);
+        io.in(room).emit('gameStart', { background: choice });
     });
 
     /* ── Disconnect / cleanup ───────────────────────────────────────────────── */

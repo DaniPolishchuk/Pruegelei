@@ -1,4 +1,4 @@
-//import { getFighters } from "../Fight/js/utils.js";
+import { getFighters } from "../../Fight/js/utils.js";
 
 export class MiniFighter {
     constructor(canvas, idle, scale, idleFrames, offset) {
@@ -35,8 +35,8 @@ export class MiniFighter {
             const frameWidth = this.image.width / this.framesMax;
             const drawWidth = frameWidth * this.scale;
             const drawHeight = this.image.height * this.scale;
-            const drawX = 0 - this.offset.x;
-            const drawY = 0 - this.offset.y;
+            const drawX = -this.offset.x;
+            const drawY = -this.offset.y;
             if (this.flipped) {
                 this.ctx.save();
                 this.ctx.scale(-1, 1);
@@ -82,12 +82,12 @@ export class MiniFighter {
     }
 }
 
-const player1canvas = document.getElementById("player1canvas");
+export const player1canvas = document.getElementById("player1canvas");
 player1canvas.width = player1canvas.offsetWidth;
 player1canvas.height = player1canvas.offsetHeight;
 export const player1 = new MiniFighter(player1canvas, null);
 
-const player2canvas = document.getElementById("player2canvas");
+export const player2canvas = document.getElementById("player2canvas");
 player2canvas.width = player2canvas.offsetWidth;
 player2canvas.height = player2canvas.offsetHeight;
 export const player2 = new MiniFighter(document.getElementById("player2canvas"), null);
@@ -102,19 +102,6 @@ function animate() {
     allFighters.forEach((fighter) => {
         fighter.update();
     });
-}
-
-async function getFighters() {
-    try {
-        const response = await fetch("http://127.0.0.1:5001/fighters");
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
-        return await response.json();
-    } catch (error) {
-        console.error("Error fetching fighters:", error);
-        return [];
-    }
 }
 
 async function fillDivWithFighters() {
@@ -166,9 +153,9 @@ function selectFighter(fighter) {
     }
 }
 
-const readyButton1 = document.getElementById("readyButton1");
-const readyButton2 = document.getElementById("readyButton2");
-const startButton = document.getElementById("startButton");
+export const readyButton1 = document.getElementById("readyButton1");
+export const readyButton2 = document.getElementById("readyButton2");
+export const startButton = document.getElementById("startButton");
 if (readyButton1 && readyButton2 && startButton) {
     readyButton1.addEventListener("click", () => getReady(readyButton1));
     readyButton2.addEventListener("click", () => getReady(readyButton2));

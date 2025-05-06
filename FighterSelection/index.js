@@ -1,226 +1,133 @@
-// /FighterSelection/index.js
-// ————————————————————————————————————————————————————————————————
-// 1) Connect and *join* your existing room
-const socket = io();
-let clientId = localStorage.getItem('clientId');
-if (!clientId) {
-    clientId = Date.now() + '_' + Math.random().toString(36).slice(2);
-    localStorage.setItem('clientId', clientId);
-}
-const room = sessionStorage.getItem('room');
-socket.on('connect', () => socket.emit('joinRoom', { roomName: room, clientId }));
+import { getFighters } from "../Fight/js/utils.js";
+import {MiniFighter} from "../localGameMode/FighterSelection/fighterSelection.js";
 
-// ————————————————————————————————————————————————————————————————
-// 2) Wait for the server to tell us our room & playerId
+const player1canvas = document.getElementById("player1canvas");
+const player2canvas = document.getElementById("player2canvas");
+player1canvas.width = player1canvas.offsetWidth;
+player1canvas.height = player1canvas.offsetHeight;
+player2canvas.width = player2canvas.offsetWidth;
+player2canvas.height = player2canvas.offsetHeight;
+
+export const player1 = new MiniFighter(player1canvas, null);
+export const player2 = new MiniFighter(player2canvas, null);
+player2.flipped = true;
+
+const allFighters = [];
 let myId = null;
-socket.on('roomJoined', ({ playerAssignments }) => {
+
+const socket = io();
+let clientId = localStorage.getItem("clientId");
+if (!clientId) {
+    clientId = Date.now() + "_" + Math.random().toString(36).slice(2);
+    localStorage.setItem("clientId", clientId);
+}
+const room = sessionStorage.getItem("room");
+socket.on("connect", () => socket.emit("joinRoom", { roomName: room, clientId }));
+socket.on("roomJoined", ({ playerAssignments }) => {
     const me = playerAssignments.find(p => p.clientId === clientId);
-    if (!me) return alert('Failed to re‑join lobby, please reload.');
+    if (!me) return alert("Failed to re-join. Reload.");
     myId = me.playerId;
-    initSelection();
+    fillDivWithFighters();
 });
 
-// ————————————————————————————————————————————————————————————————
-// 3) Mini‑sprite helper (unchanged)
-class MiniFighter {
-    constructor(canvas, src, scale, framesMax, offset) {
-        this.canvas = canvas;
-        this.ctx = canvas.getContext("2d");
-        this.img = new Image();
-        this.loaded = false;
-        this.img.onload = () => (this.loaded = true);
-        this.img.onerror = () => (this.loaded = false);
-        if (src) this.img.src = src;
-
-        this.scale = scale || 1;
-        this.framesMax = framesMax || 1;
-        this.current = 0;
-        this.elapsed = 0;
-        this.hold = 4;
-        this.offset = offset || { x: 0, y: 0 };
-        this.flipped = false;
-    }
-
-    draw() {
-        if (!this.loaded) return;
-        const fw = this.img.width / this.framesMax;
-        const dw = fw * this.scale;
-        const dh = this.img.height * this.scale;
-        const dx = -this.offset.x;
-        const dy = -this.offset.y;
-
-        if (this.flipped) {
-            this.ctx.save();
-            this.ctx.scale(-1, 1);
-            this.ctx.drawImage(
-                this.img,
-                this.current * fw, 0, fw, this.img.height,
-                -(dx + dw), dy, dw, dh
-            );
-            this.ctx.restore();
-        } else {
-            this.ctx.drawImage(
-                this.img,
-                this.current * fw, 0, fw, this.img.height,
-                dx, dy, dw, dh
-            );
-        }
-    }
-
-    update() {
-        this.draw();
-        this.elapsed++;
-        if (this.elapsed % this.hold === 0) {
-            this.current = (this.current + 1) % this.framesMax;
-        }
-    }
-}
-
-// ————————————————————————————————————————————————————————————————
-// 4) DOM refs & canvas sizing
-const grid = document.getElementById('availableFighters');
-const ready1Btn = document.getElementById('readyButton1');
-const ready2Btn = document.getElementById('readyButton2');
-const startBtn = document.getElementById('startButton');
-const c1 = document.getElementById('player1canvas');
-const c2 = document.getElementById('player2canvas');
-c1.width = c1.offsetWidth; c1.height = c1.offsetHeight;
-c2.width = c2.offsetWidth; c2.height = c2.offsetHeight;
-const p1 = new MiniFighter(c1); const p2 = new MiniFighter(c2); p2.flipped = true;
-
-// ————————————————————————————————————————————————————————————————
-// 0) EARLY BUFFER — store lobby events that arrive before initSelection is ready
-const earlyBuffer = [];
-socket.on('fighterSelected', data => earlyBuffer.push({ type: 'pick', data }));
-socket.on('ready', data => earlyBuffer.push({ type: 'ready', data }));
-
-// ————————————————————————————————————————————————————————————————
-// 5) Kick off the selection UI once we know our playerId
-async function initSelection() {
-
-    // hide all until picks happen
-    ready1Btn.style.visibility = 'hidden';
-    ready2Btn.style.visibility = 'hidden';
-    startBtn.style.visibility = 'hidden';
-
-    // disable the other player’s ready button for me
-    ready1Btn.disabled = (myId !== 1);
-    ready2Btn.disabled = (myId !== 2);
-
-    // fetch all fighters once
-    const fighters = await fetchJSON('/fighters');
-
-    // local state
-    let selLocal = false, selRemote = false, readyLocal = false, readyRemote = false;
-    const refreshStart = () => {
-        startBtn.style.visibility =
-            (selLocal && selRemote && readyLocal && readyRemote) ? 'visible' : 'hidden';
-    };
-
-    // build the grid of fighter buttons
-    fighters.forEach(f => {
-        const btn = document.createElement('button');
-        btn.className = 'fighter';
-        const cvs = document.createElement('canvas');
-        cvs.className = 'miniCanvas';
-        btn.appendChild(cvs); grid.appendChild(btn);
-        const { width, height } = cvs.getBoundingClientRect();
-        cvs.width = Math.floor(width); cvs.height = Math.floor(height);
-
-        const mf = new MiniFighter(cvs, f.Idle, f.SelectionMenuScale, f.IdleFrames,
-            { x: f.SelectionMenuOffsetX, y: f.SelectionMenuOffsetY });
-        cvs._mf = mf;
-
-        btn.onclick = () => {
-            if (selLocal) return;
-            const tgt = (myId === 1 ? p1 : p2);
-            tgt.img.src = f.Idle;
-            tgt.scale = f.SelectedScale;
-            tgt.framesMax = f.IdleFrames;
-            tgt.offset = { x: f.SelectedOffsetX, y: f.SelectedOffsetY };
-            selLocal = true;
-
-            sessionStorage.setItem(`player${myId}`, f.Name);
-            socket.emit('fighterSelected', { room, fighterName: f.Name, playerId: myId });
-
-            (myId === 1 ? ready1Btn : ready2Btn).style.visibility = 'visible';
-            refreshStart();
-        };
-    });
-
-    /* ───── real handlers now that fighters are known ───── */
-
-    const handlePick = ({ fighterName, playerId }) => {
-        if (playerId === myId) return;
-        const f = fighters.find(x => x.Name === fighterName);
-        const tgt = (playerId === 1 ? p1 : p2);
-        tgt.img.src = f.Idle;
-        tgt.scale = f.SelectedScale;
-        tgt.framesMax = f.IdleFrames;
-        tgt.offset = { x: f.SelectedOffsetX, y: f.SelectedOffsetY };
-        selRemote = true;
-
-        sessionStorage.setItem(`player${playerId}`, fighterName);
-        (playerId === 1 ? ready1Btn : ready2Btn).style.visibility = 'visible';
-        refreshStart();
-    };
-
-    const handleReady = ({ playerId, ready }) => {
-        if (playerId === myId) readyLocal = ready; else readyRemote = ready;
-        const btn = (playerId === 1 ? ready1Btn : ready2Btn);
-        btn.style.backgroundColor = ready ? 'orange' : 'black';
-        btn.style.color = ready ? 'black' : 'orange';
-        refreshStart();
-    };
-
-    // swap temporary listeners for the real ones
-    socket.off('fighterSelected'); socket.off('ready');
-    socket.on('fighterSelected', handlePick);
-    socket.on('ready', handleReady);
-
-    // process buffered events that arrived before we got here
-    earlyBuffer.forEach(pkt => {
-        if (pkt.type === 'pick') handlePick(pkt.data);
-        else handleReady(pkt.data);
-    });
-    earlyBuffer.length = 0;
-
-    /* ───── ready buttons ───── */
-    ready1Btn.onclick = () => {
-        if (myId !== 1 || !selLocal) return;
-        readyLocal = !readyLocal;
-        socket.emit('ready', { room, playerId: 1, ready: readyLocal });
-        refreshStart();
-    };
-    ready2Btn.onclick = () => {
-        if (myId !== 2 || !selLocal) return;
-        readyLocal = !readyLocal;
-        socket.emit('ready', { room, playerId: 2, ready: readyLocal });
-        refreshStart();
-    };
-
-    /* ───── start button & transition ───── */
-    startBtn.onclick = () => {
-        if (!sessionStorage.getItem('player1') || !sessionStorage.getItem('player2'))
-            return alert('Waiting for both fighters to be picked…');
-        socket.emit('startGame', room);
-    };
-    socket.on('gameStart', () => window.location.href = '/background');
-}
-
-// ————————————————————————————————————————————————————————————————
-// 6) Draw loop
 function animate() {
-    requestAnimationFrame(animate);
-    p1.update(); p2.update();
-    document.querySelectorAll('.miniCanvas').forEach(c => c._mf.update());
+    window.requestAnimationFrame(animate);
+    player1.update();
+    player2.update();
+    allFighters.forEach(f => f.update());
 }
 animate();
 
-// ————————————————————————————————————————————————————————————————
-// 7) fetchJSON helper
-async function fetchJSON(url) {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error(`${url} → ${r.status}`);
-    return r.json();
+async function fillDivWithFighters() {
+    const fighters = await getFighters();
+    const parent = document.getElementById("availableFighters");
+    parent.innerHTML = ""; // Prevent duplicate appends
+
+    for (const fighter of fighters) {
+        const newButton = document.createElement("button");
+        newButton.className = "fighter";
+        const newCanvas = document.createElement("canvas");
+        newCanvas.className = "miniCanvas";
+        newButton.appendChild(newCanvas);
+        parent.appendChild(newButton);
+        newCanvas.width = newButton.offsetWidth;
+        newCanvas.height = newButton.offsetHeight;
+
+        allFighters.push(new MiniFighter(newCanvas, fighter.Idle, fighter.SelectionMenuScale, fighter.IdleFrames, {
+            x: fighter.SelectionMenuOffsetX,
+            y: fighter.SelectionMenuOffsetY,
+        }));
+
+        newButton.addEventListener("click", () => {
+            socket.emit("fighterSelected", { room, fighterName: fighter.Name, playerId: myId });
+            sessionStorage.setItem(`player${myId}`, fighter.Name);
+            setFighter(myId, fighter);
+        });
+    }
 }
+
+function setFighter(playerId, fighter) {
+    const tgt = (playerId === 1 ? player1 : player2);
+    tgt.setImage(fighter.Idle);
+    tgt.scale = fighter.SelectedScale;
+    tgt.framesMax = fighter.IdleFrames;
+    tgt.offset = { x: fighter.SelectedOffsetX, y: fighter.SelectedOffsetY };
+    tgt.framesCurrent = 0;
+    tgt.name = fighter.Name;
+
+    if (playerId === 1) readyButton1.style.visibility = "visible";
+    if (playerId === 2) readyButton2.style.visibility = "visible";
+}
+
+socket.on("fighterSelected", ({ fighterName, playerId }) => {
+    getFighters().then(fighters => {
+        const f = fighters.find(x => x.Name === fighterName);
+        if (f) setFighter(playerId, f);
+    });
+    sessionStorage.setItem(`player${playerId}`, fighterName);
+    console.log(`player${playerId}`, fighterName);
+});
+
+export const readyButton1 = document.getElementById("readyButton1");
+export const readyButton2 = document.getElementById("readyButton2");
+export const startButton = document.getElementById("startButton");
+
+readyButton1.addEventListener("click", () => toggleReady(1));
+readyButton2.addEventListener("click", () => toggleReady(2));
+startButton.addEventListener("click", startBgPicking);
+
+let readyStates = { 1: false, 2: false };
+
+function toggleReady(id) {
+    if (myId !== id) return;
+    readyStates[id] = !readyStates[id];
+    updateReadyButton(id, readyStates[id]);
+    socket.emit("ready", { room, playerId: id, ready: readyStates[id] });
+    refreshStartButton();
+}
+
+function updateReadyButton(id, state) {
+    const btn = id === 1 ? readyButton1 : readyButton2;
+    btn.style.backgroundColor = state ? "orange" : "black";
+    btn.style.color = state ? "black" : "orange";
+    btn.pressed = state;
+}
+
+socket.on("ready", ({ playerId, ready }) => {
+    readyStates[playerId] = ready;
+    updateReadyButton(playerId, ready);
+    refreshStartButton();
+});
+
+function refreshStartButton() {
+    startButton.style.visibility =
+        (readyStates[1] && readyStates[2]) ? "visible" : "hidden";
+}
+
+function startBgPicking() {
+    console.log(player1.name, player2.name);
+    socket.emit("startGame", room);
+}
+socket.on("gameStart", () => {
+    window.location.href = "/backgroundLoc";
+});

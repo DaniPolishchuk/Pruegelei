@@ -1,16 +1,26 @@
-const offscreenCanvas = document.createElement("canvas");
-const offscreenCtx = offscreenCanvas.getContext("2d");
+import {Sprite, Fighter } from "../../Fight/js/classes.js";
+import {
+    decreaseTimer,
+    determineDamage,
+    determineWinner,
+    rectangularCollision,
+    setBackground,
+    setFighterData
+} from "../../Fight/js/utils.js";
+
+export const offscreenCanvas = document.createElement("canvas");
+export const offscreenCtx = offscreenCanvas.getContext("2d");
 
 offscreenCanvas.width = 1280;
 offscreenCanvas.height = 720;
 
-const canvas = document.querySelector("canvas");
-const ctx = canvas.getContext("2d");
+export const canvas = document.querySelector("canvas");
+export const ctx = canvas.getContext("2d");
 canvas.width = 1280;
 canvas.height = 720;
 // ===== Precompute Constants =====
-const MOVE_SPEED = canvas.width / 275;
-const JUMP_VELOCITY = canvas.height / 45;
+export const MOVE_SPEED = canvas.width / 275;
+export const JUMP_VELOCITY = canvas.height / 45;
 
 let groundLvl, background;
 
@@ -44,7 +54,7 @@ const player1HealthBar = document.querySelector("#player1Health");
 const player2HealthBar = document.querySelector("#player2Health");
 
 // ===== Global Constants =====
-const gravity = 0.5;
+export const gravity = 0.5;
 
 // ===== Players =====
 const player1 = new Fighter({
@@ -52,7 +62,8 @@ const player1 = new Fighter({
         x: canvas.width * 0.25,
         y: canvas.height / 5,
     },
-    velocity: { x: 0, y: 0 }
+    velocity: { x: 0, y: 0 },
+    canvas
 });
 
 const player2 = new Fighter({
@@ -60,11 +71,12 @@ const player2 = new Fighter({
         x: canvas.width * 0.75,
         y: canvas.height / 5,
     },
-    velocity: { x: 0, y: 0 }
+    velocity: { x: 0, y: 0 },
+    canvas
 });
 
 // ===== Keyboard Input Object =====
-const keys = {
+export const keys = {
     s: {pressed: false},
     a: {pressed: false},
     d: {pressed: false},
@@ -78,7 +90,7 @@ decreaseTimer();
 
 // ===== Helper Functions =====
 
-function calculateCamera() {
+export function calculateCamera() {
     const margin = 100;
     const maxZoom = 1.8;
     const worldLeft = 0;
@@ -103,7 +115,7 @@ function calculateCamera() {
 }
 
 // Update horizontal movement (common to both players)
-function updateHorizontalMovement(player, player2, leftPressed, rightPressed, leftKey, rightKey) {
+export function updateHorizontalMovement(player, player2, leftPressed, rightPressed, leftKey, rightKey) {
     let canMoveLeft = leftPressed && player.position.x > 0;
     let canMoveRight = rightPressed && player.position.x + player.width < canvas.width;
 
@@ -130,7 +142,7 @@ function updateHorizontalMovement(player, player2, leftPressed, rightPressed, le
 
 const SLIP_SPEED = 1; // Passe diesen Wert nach Bedarf an
 
-function resolveVerticalCollisionBetweenFighters(fighter, otherFighter) {
+export function resolveVerticalCollisionBetweenFighters(fighter, otherFighter) {
     // Nur prüfen, wenn der Fighter nach unten fällt
     if (fighter.velocity.y > 0) {
         // Prüfe, ob sich die beiden horizontal überschneiden
@@ -164,7 +176,7 @@ function resolveVerticalCollisionBetweenFighters(fighter, otherFighter) {
 }
 
 // Update vertical movement sprites (jump/fall)
-function updateVerticalSprite(player) {
+export function updateVerticalSprite(player) {
     if (player.velocity.y < 0) {
         player.switchSprite("jump");
     } else if (player.velocity.y > 0) {
@@ -211,9 +223,8 @@ function animate() {
         background.draw(offscreenCtx);
     }
 
-    player1.update(offscreenCtx);
-    player2.update(offscreenCtx);
-
+    player1.update(offscreenCtx, groundLvl, gravity);
+    player2.update(offscreenCtx, groundLvl, gravity);
 
     if (player1.position.x < player2.position.x) {
         player1.flip = false;
@@ -268,7 +279,7 @@ function animate() {
     processAttackCollision(player2, player1, player1HealthBar);
 
     if (player2.health <= 0 || player1.health <= 0) {
-        determineWinner(player1, player2, timerID);
+        determineWinner(player1, player2);
     }
 
     offscreenCtx.restore();
@@ -282,13 +293,13 @@ async function initializeGame() {
     // Wait for fighter data to load for both players
     await Promise.all([
         setFighterData(player1, false, sessionStorage.getItem("player1")),
-        setFighterData(player2, true, sessionStorage.getItem("player2"))
+        setFighterData(player2, true, sessionStorage.getItem("player2")),
+        determineDamage(player1),
+        determineDamage(player2)
     ]);
     // Start the animation loop
     animate();
 }
-determineDamage(player1);
-determineDamage(player2);
 
 // ===== Keyboard Event Listeners =====
 window.addEventListener("keydown", (event) => {
@@ -310,7 +321,6 @@ window.addEventListener("keydown", (event) => {
                 player1.lastKey = "a";
                 break;
             case "w":
-                console.log(player1.position.y + player1.height, groundLvl);
                 if (player1.position.y + player1.height >= groundLvl) {
                     player1.velocity.y = -JUMP_VELOCITY;
                 }

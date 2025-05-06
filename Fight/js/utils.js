@@ -1,7 +1,5 @@
-// Fight/js/utils.js
-
 // === Collision & Outcome ===
-function rectangularCollision(f1, f2) {
+export function rectangularCollision(f1, f2) {
     const { position: p1, width: w1, height: h1 } = f1.attackBox;
     const left1 = p1.x, right1 = p1.x + w1;
     const top1 = Math.min(p1.y, p1.y + h1), bottom1 = Math.max(p1.y, p1.y + h1);
@@ -14,123 +12,154 @@ function rectangularCollision(f1, f2) {
         top1 <= bottom2;
 }
 
-function determineWinner(p1, p2, timerId) {
-    clearTimeout(timerId);
+export function determineWinner(p1, p2) {
+    clearTimeout(timerID);
     const resEl = document.querySelector("#gameResult");
     resEl.style.display = "flex";
-    if (p1.health > p2.health) resEl.textContent = "Player 1 won";
-    else if (p1.health < p2.health) resEl.textContent = "Player 2 won";
+    if (p1.health > p2.health) resEl.textContent = "Player1 won";
+    else if (p1.health < p2.health) resEl.textContent = "Player2 won";
     else resEl.textContent = "Tie";
 }
 
 // === Timer ===
-let _timerValue = parseInt(document.getElementById("timer").textContent, 10);
-let _timerID;
-function decreaseTimer() {
+const timerEl = document.getElementById("timer");
+let timerValue = timerEl ? parseInt(timerEl.textContent, 10) : null;
+let timerID;
+export function decreaseTimer() {
     const el = document.getElementById("timer");
-    if (_timerValue > 0) {
-        _timerValue--;
-        el.textContent = _timerValue;
-        _timerID = setTimeout(decreaseTimer, 1000);
+    if (timerValue > 0) {
+        timerValue--;
+        el.textContent = timerValue;
+        timerID = setTimeout(decreaseTimer, 1000);
     } else {
-        determineWinner(player1, player2, _timerID);
+        determineWinner(player1, player2, timerID);
     }
 }
 
 // === Data Fetching ===
-async function getFighters() {
+export async function getFighters() {
     try {
-        const r = await fetch("/fighters");
-        if (!r.ok) throw new Error(r.status);
-        return await r.json();
-    } catch (e) {
-        console.error("getFighters()", e);
+        const response = await fetch("/fighters");
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching fighters:", error);
         return [];
     }
 }
 
-async function getBackgrounds() {
+export async function getBackgrounds() {
     try {
-        const r = await fetch("/backgrounds");
-        if (!r.ok) throw new Error(r.status);
-        return await r.json();
-    } catch (e) {
-        console.error("getBackgrounds()", e);
+        const response = await fetch("/backgrounds");
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching backgrounds:", error);
         return [];
     }
 }
 
 // === Fighter Data Setup ===
-async function setFighterData(player, flip, name) {
-    const list = await getFighters();
-    const f = list.find(x => x.Name === name);
-    if (!f) return console.error("no fighter:", name);
-
-    player.scale = f.Scale;
-    player.image.src = f.Idle;
-    player.framesMax = f.IdleFrames;
-    player.offset = { x: f.OffsetX, y: f.OffsetY };
-    player.flip = flip;
-
-    // base attack‐box offset
-    const baseOff = { x: f.AttackBoxOffsetX, y: f.AttackBoxOffsetY };
-    player.baseAttackBoxOffset = baseOff;
-
-    // primary attack1
-    const w1 = f.Attack1Width, h1 = f.Attack1Height;
-    player.attackBox = {
-        position: { x: player.position.x, y: player.position.y },
-        offset: { x: flip ? baseOff.x - w1 : baseOff.x, y: baseOff.y },
-        width: w1, height: h1
-    };
-    player.attackFrames = f.Attack1Frames;
-
-    // build sprites map
-    const map = {
-        idle: ["Idle", "IdleFrames"],
-        run: ["Run", "RunFrames"],
-        jump: ["Jump", "JumpFrames"],
-        fall: ["Fall", "FallFrames"],
-        takeHit: ["TakeHit", "TakeHitFrames"],
-        death: ["Death", "DeathFrames"],
-        attack1: ["Attack1", "Attack1Frames", true],
-        attack2: ["Attack2", "Attack2Frames", true],
-        attack3: ["Attack3", "Attack3Frames", true],
-        attack4: ["Attack4", "Attack4Frames", true],
-    };
-
-    player.sprites = {};
-    for (let [key, arr] of Object.entries(map)) {
-        const [srcK, frK, hasBox] = arr;
-        const imgSrc = f[srcK], fm = f[frK];
-        player.sprites[key] = { imageSrc: imgSrc, framesMax: fm };
-        if (hasBox) {
-            const w = f[srcK + "Width"], h = f[srcK + "Height"];
-            const xo = flip
-                ? player.width - baseOff.x - w
-                : baseOff.x;
-            player.sprites[key].attackBox = {
-                position: { x: player.position.x, y: player.position.y },
-                offset: { x: xo, y: baseOff.y },
-                width: w, height: h
-            };
+export async function setFighterData(player, flip, fighterName) {
+    try {
+        // Fetch all fighters and pick the one matching fighterName.
+        const fighters = await getFighters();
+        const fighter = fighters.find(f => f.Name === fighterName);
+        if (!fighter) {
+            console.error(`Fighter "${fighterName}" not found.`);
+            return;
         }
-        // preload
-        const im = new Image();
-        im.src = imgSrc;
-        player.sprites[key].image = im;
+
+        // Basic player properties.
+        player.scale = fighter.Scale;
+        player.image.src = fighter.Idle;
+        player.framesMax = fighter.IdleFrames;
+        player.offset = {x: fighter.OffsetX, y: fighter.OffsetY};
+        player.flip = flip;
+
+        // Define and store the base attack box offset (assumes fighter is facing right).
+        const baseAttackBoxOffset = {x: fighter.AttackBoxOffsetX, y: fighter.AttackBoxOffsetY};
+        player.baseAttackBoxOffset = baseAttackBoxOffset;
+
+        // Compute the attack box offset for the primary attack.
+        // If not flipped, use the base offset.
+        // If flipped, mirror it relative to the fighter.
+        const attackBoxWidth = fighter.Attack1Width;
+        const attackBoxOffsetX = flip
+            ? baseAttackBoxOffset.x - attackBoxWidth
+            : baseAttackBoxOffset.x;
+
+        player.attackBox = {
+            position: {x: player.position.x, y: player.position.y},
+            offset: {x: attackBoxOffsetX, y: baseAttackBoxOffset.y},
+            width: attackBoxWidth,
+            height: fighter.Attack1Height,
+        };
+        player.attackFrames = fighter.Attack1Frames;
+
+        // Helper to create an attack box for a given attack type using the base offset.
+        const createAttackBox = (attackKey) => {
+            const attackBoxWidth = fighter[attackKey + "Width"];
+            const attackBoxHeight = fighter[attackKey + "Height"];
+            const offsetX = flip
+                ? player.width - baseAttackBoxOffset.x - attackBoxWidth
+                : baseAttackBoxOffset.x;
+            return {
+                position: {x: player.position.x, y: player.position.y},
+                offset: {x: offsetX, y: baseAttackBoxOffset.y},
+                width: attackBoxWidth,
+                height: attackBoxHeight,
+            };
+        };
+
+        // Mapping of sprite keys to fighter property keys.
+        const spriteMapping = {
+            idle: {srcKey: "Idle", framesKey: "IdleFrames"},
+            run: {srcKey: "Run", framesKey: "RunFrames"},
+            jump: {srcKey: "Jump", framesKey: "JumpFrames"},
+            fall: {srcKey: "Fall", framesKey: "FallFrames"},
+            attack1: {srcKey: "Attack1", framesKey: "Attack1Frames", hasAttackBox: true},
+            attack2: {srcKey: "Attack2", framesKey: "Attack2Frames", hasAttackBox: true},
+            attack3: {srcKey: "Attack3", framesKey: "Attack3Frames", hasAttackBox: true},
+            attack4: {srcKey: "Attack4", framesKey: "Attack4Frames", hasAttackBox: true},
+            takeHit: {srcKey: "TakeHit", framesKey: "TakeHitFrames"},
+            death: {srcKey: "Death", framesKey: "DeathFrames"},
+        };
+
+        player.sprites = {};
+        for (const [key, mapping] of Object.entries(spriteMapping)) {
+            player.sprites[key] = {
+                imageSrc: fighter[mapping.srcKey],
+                framesMax: fighter[mapping.framesKey],
+            };
+            if (mapping.hasAttackBox) {
+                player.sprites[key].attackBox = createAttackBox(mapping.srcKey);
+            }
+        }
+
+        // Preload images for each sprite.
+        for (const spriteKey in player.sprites) {
+            const sprite = player.sprites[spriteKey];
+            sprite.image = new Image();
+            sprite.image.src = sprite.imageSrc;
+        }
+    } catch (error) {
+        console.error("Error fetching fighter data:", error);
     }
 }
 
 // === Background Data Setup ===
-async function setBackground(bgName) {
-    const list = await getBackgrounds();
-    const b = list.find(x => x.Name === bgName);
-    if (!b) throw new Error("no bg: " + bgName);
+export async function setBackground(bgName) {
+    const backgrounds = await getBackgrounds();
+    const background = backgrounds.find(f => f.Name === bgName);
     return {
-        imageSrc: b.BackgroundImage,
-        groundLevel: 720 / b.GroundLevel,
-        borderBackground: b.BorderBackground
+        imageSrc: background.BackgroundImage,
+        groundLevel: 720 / background.GroundLevel,
+        borderBackground: background.BorderBackground
     };
 }
 // === Damage calculation helpers ===
@@ -153,7 +182,7 @@ async function getAvgAttackSurface() {
     return count ? totalSurface / count : 0;
 }
 
-async function determineDamage(player) {
+export async function determineDamage(player) {
     const avg = await getAvgAttackSurface();
     if (!avg) {
         player.damage = 0;

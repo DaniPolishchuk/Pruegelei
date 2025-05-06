@@ -1,3 +1,24 @@
+import {Sprite, Fighter} from "./js/classes.js";
+import {
+    decreaseTimer,
+    determineDamage,
+    determineWinner,
+    rectangularCollision,
+    setBackground,
+    setFighterData
+} from "./js/utils.js";
+import {
+    JUMP_VELOCITY,
+    offscreenCtx,
+    offscreenCanvas,
+    canvas,
+    ctx,
+    gravity,
+    calculateCamera,
+    updateHorizontalMovement,
+    updateVerticalSprite,
+    resolveVerticalCollisionBetweenFighters} from "../localGameMode/Fight/fight.js";
+
 const keys = { a: false, d: false, w: false, s: false, '1':false, '2': false, '3': false, '4': false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
 const remoteKeys = { a: false, d: false, w: false, s: false, '1': false, '2': false, '3': false, '4': false, ArrowLeft: false, ArrowRight: false, ArrowUp: false };
 
@@ -14,30 +35,23 @@ socket.emit('joinRoom', { roomName: room, clientId });
 // 3) track which animation we’re in
 let currentSpriteName = 'idle';
 
-// Grab two canvases: one offscreen for camera‐transform, one onscreen
-const offscreenCanvas = document.createElement("canvas");
-const offscreenCtx = offscreenCanvas.getContext("2d");
 offscreenCanvas.width = 1280;
 offscreenCanvas.height = 720;
 
-const canvas = document.querySelector("canvas");
-const ctx = canvas.getContext("2d");
 canvas.width = 1280;
 canvas.height = 720;
-
-// Movement constants
-const MOVE_SPEED = canvas.width / 275;
-const JUMP_VELOCITY = canvas.height / 45;
 
 // 2) decide who is “me” vs “them”
 const myPlayerId = Number(sessionStorage.getItem('playerId')); // 1 or 2
 const player1 = new Fighter({
     position: { x: canvas.width * 0.25, y: canvas.height / 5 },
-    velocity: { x: 0, y: 0 }
+    velocity: { x: 0, y: 0 },
+    canvas
 });
 const player2 = new Fighter({
     position: { x: canvas.width * 0.75, y: canvas.height / 5 },
-    velocity: { x: 0, y: 0 }
+    velocity: { x: 0, y: 0 },
+    canvas
 });
 const localFighter = myPlayerId === 1 ? player1 : player2;
 const remoteFighter = myPlayerId === 1 ? player2 : player1;
@@ -51,9 +65,6 @@ const videoElement = document.getElementById("borderBackground");
 // Players & health bars
 const player1HealthBar = document.querySelector("#player1Health");
 const player2HealthBar = document.querySelector("#player2Health");
-
-// Gravity
-const gravity = 0.5;
 
 // Create Fighter instances (from classes.js)
 window.addEventListener("keydown", e => {
@@ -221,67 +232,6 @@ async function setUpGame() {
 // Pull it all together
 setUpGame();
 
-// ===== Helper: Camera Zoom & Pan =====
-function calculateCamera() {
-    const margin = 100,
-        maxZoom = 1.8,
-        worldW = canvas.width;
-
-    const leftP = Math.min(player1.position.x, player2.position.x),
-        rightP = Math.max(
-            player1.position.x + player1.width,
-            player2.position.x + player2.width
-        );
-
-    const needW = (rightP - leftP) + margin * 2;
-    let scale = canvas.width / needW;
-    scale = Math.min(Math.max(scale, 1), maxZoom);
-
-    let centerX = (leftP + rightP) / 2;
-    const halfView = (canvas.width / scale) / 2;
-    centerX = Math.min(
-        worldW - halfView,
-        Math.max(halfView, centerX)
-    );
-
-    return { scale, cameraX: centerX };
-}
-
-// Resolve horizontal movement & sprites
-function updateHorizontalMovement(pl, other, left, right, lk, rk) {
-    if (pl.isAttacking || pl.isBlocking) return;
-    let canL = left && pl.position.x > 0;
-    let canR = right && pl.position.x + pl.width < canvas.width;
-
-
-    // simple “no overlap” when both on ground
-    if (
-        pl.hitbox.position.y + pl.hitbox.height > other.hitbox.position.y
-    ) {
-        if (pl.flip) canL = canL && (pl.hitbox.position.x > other.hitbox.position.x + other.hitbox.width);
-        else canR = canR && (pl.hitbox.position.x + pl.hitbox.width < other.hitbox.position.x);
-    }
-
-    if (canL) {
-        pl.velocity.x = -MOVE_SPEED;
-        pl.lastKey = lk;
-        pl.switchSprite("run");
-    } else if (canR) {
-        pl.velocity.x = MOVE_SPEED;
-        pl.lastKey = rk;
-        pl.switchSprite("run");
-    } else {
-        pl.switchSprite("idle");
-    }
-}
-
-// Update jump/fall sprite
-function updateVerticalSprite(pl) {
-    if (pl.isAttacking) return;
-    if (pl.velocity.y < 0) pl.switchSprite("jump");
-    else if (pl.velocity.y > 0) pl.switchSprite("fall");
-}
-
 // Attack collision / health
 function processAttackCollision(attacker, defender, barEl) {
     if (attacker.isAttacking && !attacker.hitLanded && attacker.framesCurrent >= attacker.attackFrames / 2) {
@@ -406,8 +356,8 @@ function animate() {
 
     // 3) Draw background & both fighters
     backgroundSprite.draw(offscreenCtx);
-    player1.update(offscreenCtx);
-    player2.update(offscreenCtx);
+    player1.update(offscreenCtx, groundLvl, gravity);
+    player2.update(offscreenCtx, groundLvl, gravity);
 
     // 4) Face‑off and zero out old horizontal velocities
     if (player1.position.x < player2.position.x) {
@@ -442,8 +392,7 @@ function animate() {
 
     // 8) WIN CONDITION
     if (player1.health <= 0 || player2.health <= 0) {
-        clearTimeout(timerID);
-        determineWinner(player1, player2, timerID);
+        determineWinner(player1, player2);
     }
 
     // 9) Un‑do camera, draw to screen, and sync up your state
