@@ -1,5 +1,5 @@
-import { getFighters } from "../Fight/js/utils.js";
-import {MiniFighter} from "../localGameMode/FighterSelection/fighterSelection.js";
+import {getFighters} from "../Fight/js/utils.js";
+import {MiniFighter} from "../Fight/js/classes.js";
 
 const player1canvas = document.getElementById("player1canvas");
 const player2canvas = document.getElementById("player2canvas");
@@ -85,12 +85,11 @@ socket.on("fighterSelected", ({ fighterName, playerId }) => {
         if (f) setFighter(playerId, f);
     });
     sessionStorage.setItem(`player${playerId}`, fighterName);
-    console.log(`player${playerId}`, fighterName);
 });
 
-export const readyButton1 = document.getElementById("readyButton1");
-export const readyButton2 = document.getElementById("readyButton2");
-export const startButton = document.getElementById("startButton");
+const readyButton1 = document.getElementById("readyButton1");
+const readyButton2 = document.getElementById("readyButton2");
+const startButton = document.getElementById("startButton");
 
 readyButton1.addEventListener("click", () => toggleReady(1));
 readyButton2.addEventListener("click", () => toggleReady(2));
@@ -125,9 +124,11 @@ function refreshStartButton() {
 }
 
 function startBgPicking() {
-    console.log(player1.name, player2.name);
+    sessionStorage.setItem("player1", player1.name);
+    sessionStorage.setItem("player2", player2.name);
+    startButton.disabled = true;
     socket.emit("startGame", room);
 }
 socket.on("gameStart", () => {
-    window.location.href = "/backgroundLoc";
+    window.location.href = "/background";
 });

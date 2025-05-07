@@ -199,7 +199,13 @@ io.on('connection', socket => {
 
     /* ── Fighter selected ───────────────────────────────────────────────────── */
     socket.on('fighterSelected', ({ room, fighterName, playerId }) => {
-        io.in(room).emit("fighterSelected", { fighterName, playerId });
+        const r = rooms[room];
+        if (r) {
+            for (const rec of r.players.values())
+                if (rec.playerId === playerId)
+                    rec.fighterName = fighterName;
+            }
+        io.in(room).emit('fighterSelected', { fighterName, playerId });
     });
 
     /* ── Ready toggle ───────────────────────────────────────────────────────── */
@@ -214,11 +220,14 @@ io.on('connection', socket => {
 
     /* ── Start game ─────────────────────────────────────────────────────────── */
     socket.on('startGame', room=> {
-        const rows = db.prepare('SELECT Name FROM Backgrounds').all();
-        const choice = rows[Math.floor(Math.random() * rows.length)].Name;
-        lastBackground[room] = choice;
-        console.log(`[SERVER] ▶ startGame for room=${room}, bg=${choice}`);
-        io.in(room).emit('gameStart', { background: choice });
+        if (!lastBackground[room]) {                    // first request: roll once
+            const rows= db.prepare('SELECT Name FROM Backgrounds').all();
+            lastBackground[room] = rows[Math.floor(Math.random() * rows.length)].Name;
+            io.in(room).emit('gameStart', {background: lastBackground[room]});
+            console.log(`[SERVER] ▶ startGame room=${room}, bg=${lastBackground[room]}`);
+            } else {                                        // later requests: replay
+                socket.emit('gameStart', {background: lastBackground[room]});
+            }
     });
 
     /* ── Disconnect / cleanup ───────────────────────────────────────────────── */

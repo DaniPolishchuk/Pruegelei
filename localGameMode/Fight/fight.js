@@ -86,7 +86,7 @@ export const keys = {
 }
 
 
-decreaseTimer();
+decreaseTimer(player1, player2);
 
 // ===== Helper Functions =====
 
@@ -165,7 +165,6 @@ export function resolveVerticalCollisionBetweenFighters(fighter, otherFighter) {
 
                 // Wenn der Fighter links vom Zentrum des anderen ist, rutsche nach links, sonst nach rechts
                 if (fighterCenter < otherCenter) {
-                    debugger
                     fighter.velocity.x = -SLIP_SPEED;
                 } else if (fighterCenter > otherCenter) {
                     fighter.velocity.x = SLIP_SPEED;

@@ -1,53 +1,12 @@
 import {player1, player2} from "../FighterSelection/fighterSelection.js";
-import { getBackgrounds, getFighters } from "../../Fight/js/utils.js";
+import {setFighters, setBackgrounds} from "../../Fight/js/utils.js";
 
-export const bgs = document.getElementById("backgrounds");
+const bgs = document.getElementById("backgrounds");
 
-export async function setFighters() {
-    const fighterName1 = sessionStorage.getItem("player1");
-    const fighterName2 = sessionStorage.getItem("player2");
-    console.log(fighterName1, fighterName2);
-
-    getFighters().then(fighters => {
-        const fighter1 = fighters.find(f => f.Name === fighterName1);
-        player1.setImage(fighter1.Idle);
-        player1.scale = fighter1.BackgroundSelectionScale;
-        player1.framesMax = fighter1.IdleFrames;
-        player1.offset = {
-            x: fighter1.BackgroundSelectionOffsetX,
-            y: fighter1.BackgroundSelectionOffsetY
-        };
-        player1.framesHold = 8;
-        const fighter2 = fighters.find(f => f.Name === fighterName2);
-        player2.setImage(fighter2.Idle);
-        player2.scale = fighter2.BackgroundSelectionScale;
-        player2.framesMax = fighter2.IdleFrames;
-        player2.offset = {
-            x: fighter2.BackgroundSelectionOffsetX,
-            y: fighter2.BackgroundSelectionOffsetY
-        };
-        player2.framesHold = 8;
-    });
-}
-
-export function animate() {
+function animate() {
     window.requestAnimationFrame(animate);
     player1.update();
     player2.update();
-}
-
-// Populate the #backgrounds container with your background images
-export async function setBackgrounds() {
-    getBackgrounds().then(backgrounds => {
-        for (const background of backgrounds) {
-            let newImage = document.createElement("img");
-            newImage.src = background.BackgroundImage;
-            newImage.className = "backgroundImage";
-            newImage.alt = background.Name;
-
-            bgs.appendChild(newImage);
-        }
-    });
 }
 
 function pickRandomBackground() {
@@ -93,8 +52,8 @@ function startRandomPick(duration = 5000, intervalTime = 150) {
 
 // Initialize the process once the backgrounds are loaded
 async function init() {
-    await setFighters();
-    await setBackgrounds();
+    await setFighters(player1, player2);
+    await setBackgrounds(bgs);
     animate();
     startRandomPick();
 }

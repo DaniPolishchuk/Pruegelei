@@ -25,14 +25,18 @@ export function determineWinner(p1, p2) {
 const timerEl = document.getElementById("timer");
 let timerValue = timerEl ? parseInt(timerEl.textContent, 10) : null;
 let timerID;
-export function decreaseTimer() {
+export function decreaseTimer(player1, player2) {
     const el = document.getElementById("timer");
     if (timerValue > 0) {
         timerValue--;
         el.textContent = timerValue;
-        timerID = setTimeout(decreaseTimer, 1000);
+        timerID = setTimeout(
+            () => decreaseTimer(player1, player2),
+            1000
+        );
     } else {
-        determineWinner(player1, player2, timerID);
+        clearTimeout(timerID);
+        determineWinner(player1, player2);
     }
 }
 
@@ -190,4 +194,44 @@ export async function determineDamage(player) {
     }
     const surface = player.attackBox.width * Math.abs(player.attackBox.height);
     player.damage = 5 / (surface / avg);
+}
+
+export async function setFighters(player1, player2) {
+    const fighterName1 = sessionStorage.getItem("player1");
+    const fighterName2 = sessionStorage.getItem("player2");
+
+    getFighters().then(fighters => {
+        const fighter1 = fighters.find(f => f.Name === fighterName1);
+        player1.setImage(fighter1.Idle);
+        player1.scale = fighter1.BackgroundSelectionScale;
+        player1.framesMax = fighter1.IdleFrames;
+        player1.offset = {
+            x: fighter1.BackgroundSelectionOffsetX,
+            y: fighter1.BackgroundSelectionOffsetY
+        };
+        player1.framesHold = 8;
+        const fighter2 = fighters.find(f => f.Name === fighterName2);
+        player2.setImage(fighter2.Idle);
+        player2.scale = fighter2.BackgroundSelectionScale;
+        player2.framesMax = fighter2.IdleFrames;
+        player2.offset = {
+            x: fighter2.BackgroundSelectionOffsetX,
+            y: fighter2.BackgroundSelectionOffsetY
+        };
+        player2.framesHold = 8;
+    });
+}
+
+// Populate the #backgrounds container with your background images
+export async function setBackgrounds(bgs) {
+    getBackgrounds().then(backgrounds => {
+        for (const background of backgrounds) {
+            let newImage = document.createElement("img");
+            newImage.src = background.BackgroundImage;
+            newImage.className = "backgroundImage";
+            newImage.alt = background.Name;
+
+            bgs.appendChild(newImage);
+        }
+    });
 }

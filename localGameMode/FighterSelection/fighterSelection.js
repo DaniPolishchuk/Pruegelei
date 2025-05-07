@@ -1,93 +1,12 @@
 import { getFighters } from "../../Fight/js/utils.js";
+import {MiniFighter} from "../../Fight/js/classes.js";
 
-export class MiniFighter {
-    constructor(canvas, idle, scale, idleFrames, offset) {
-        this.canvas = canvas;
-        this.ctx = this.canvas.getContext("2d");
-        this.image = new Image();
-        this.image.onload = () => this.loaded = true;
-        this.image.onerror = () => this.loaded = false;
-        this.loaded = false;
-        this.setImage(idle);
-        this.scale = scale || 0;
-        this.framesMax = idleFrames || 0;
-        this.framesCurrent = 0;
-        this.framesElapsed = 0;
-        this.framesHold = 4;
-        this.offset = offset || {x: 0, y: 0};
-        this.flipped = false;
-        this.name = null;
-    }
-
-    setImage(idle) {
-        if (idle) {
-            this.loaded = false; // Reset until new image loads
-            this.image.src = idle;
-        } else {
-            this.image.src = ""; // Clear src if idle is null
-            this.loaded = false;
-        }
-    }
-
-    draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (this.loaded && this.image.src) {
-            const frameWidth = this.image.width / this.framesMax;
-            const drawWidth = frameWidth * this.scale;
-            const drawHeight = this.image.height * this.scale;
-            const drawX = -this.offset.x;
-            const drawY = -this.offset.y;
-            if (this.flipped) {
-                this.ctx.save();
-                this.ctx.scale(-1, 1);
-                this.ctx.drawImage(
-                    this.image,
-                    this.framesCurrent * frameWidth,
-                    0,
-                    frameWidth,
-                    this.image.height,
-                    -(drawX + drawWidth),
-                    drawY,
-                    drawWidth,
-                    drawHeight
-                );
-                this.ctx.restore();
-            } else {
-                this.ctx.drawImage(
-                    this.image,
-                    this.framesCurrent * frameWidth,
-                    0,
-                    frameWidth,
-                    this.image.height,
-                    drawX,
-                    drawY,
-                    drawWidth,
-                    drawHeight
-                );
-            }
-        }
-    }
-
-    update() {
-        this.draw();
-        this.framesElapsed++;
-        if (this.framesElapsed % this.framesHold === 0) {
-            if (this.framesCurrent < this.framesMax - 1) {
-                this.framesCurrent++;
-            } else {
-                this.framesCurrent = 0;
-            }
-        }
-
-    }
-}
-
-export const player1canvas = document.getElementById("player1canvas");
+const player1canvas = document.getElementById("player1canvas");
 player1canvas.width = player1canvas.offsetWidth;
 player1canvas.height = player1canvas.offsetHeight;
 export const player1 = new MiniFighter(player1canvas, null);
 
-export const player2canvas = document.getElementById("player2canvas");
+const player2canvas = document.getElementById("player2canvas");
 player2canvas.width = player2canvas.offsetWidth;
 player2canvas.height = player2canvas.offsetHeight;
 export const player2 = new MiniFighter(document.getElementById("player2canvas"), null);
