@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <title>My Game</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/Fight/styles.css">
+    <link rel="stylesheet" href="/Fight/fight.css">
 </head>
 <body>
 <div class="video-container">
     <video autoplay loop muted playsinline id="borderBackground">
-        <source id="videoSource" type="video/mp4"> 
+        <source id="videoSource" type="video/mp4">
     </video>
     <div id="gameContainer">
         <div class="health-bar-container">
@@ -31,6 +31,18 @@
     </div>
 </div>
 <script src="/socket.io/socket.io.js"></script>
-<script type="module" src="/Fight/index.js"></script>
+<script>
+    (function loadByPath() {
+        const mapping = {
+            '/fight/': '/Fight/fight.js',
+            '/fightL': '/LocalGameMode/fight.js'
+        };
+        const src = mapping[window.location.pathname];
+        const s = document.createElement('script');
+        s.src = src;
+        s.type = 'module';
+        document.head.appendChild(s);
+    })();
+</script>
 </body>
 </html>
