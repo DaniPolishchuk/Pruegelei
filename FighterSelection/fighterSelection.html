@@ -5,13 +5,12 @@
     <title>Prügelei</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/FighterSelection/styles.css">
+    <link rel="stylesheet" href="/FighterSelection/fighterSelection.css">
 </head>
 <body>
 <div class="video-container">
-    <video autoplay loop muted playsinline>
-        <source src="../GIFs/flame.mp4" type="video/mp4">
-        Your browser does not support the video tag.
+    <video autoplay loop muted playsinline id="borderBackground">
+        <source id="videoSource" type="video/mp4">
     </video>
     <div id="mainMenu">
         <div id="gameTitle">PRÜGELEI</div>
@@ -31,7 +30,19 @@
         </div>
     </div>
 </div>
-<script type="module" src="/FighterSelection/index.js"></script>
-<script type="module" src="../Fight/js/utils.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    (function loadByPath() {
+        const mapping = {
+            '/fighterSelection/': '/FighterSelection/fighterSelection.js',
+            '/fighterSelectionL': '/LocalGameMode/fighterSelection.js'
+        };
+        const src = mapping[window.location.pathname];
+        const s = document.createElement('script');
+        s.src = src;
+        s.type = 'module';
+        document.head.appendChild(s);
+    })();
+</script>
 </body>
 </html>
