@@ -7,7 +7,8 @@ import {
     player1canvas,
     player2canvas,
     videoSource,
-    videoElement
+    videoElement,
+    bgs
 } from "../utils.js";
 import {MiniFighter} from "../classes.js";
 
@@ -48,11 +49,6 @@ socket.on("connect", () => {
 const player1 = new MiniFighter(player1canvas, null);
 const player2 = new MiniFighter(player2canvas, null);
 player2.flipped = true;
-
-// ==========================
-// DOM References
-// ==========================
-const bgs = document.getElementById("backgrounds");
 
 // ==========================
 // Fighter Animation Loop

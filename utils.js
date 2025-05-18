@@ -43,6 +43,8 @@ export const readyButton1 = document.getElementById("readyButton1");
 export const readyButton2 = document.getElementById("readyButton2");
 export const startButton = document.getElementById("startButton");
 
+export const bgs = document.getElementById("backgrounds");
+
 // ==============================
 // Collision Detection & Winner
 // ==============================

@@ -6,7 +6,8 @@ import {
     setFighters,
     setBackgrounds,
     videoSource,
-    videoElement
+    videoElement,
+    bgs
 } from "../utils.js";
 
 // ==========================
@@ -14,11 +15,6 @@ import {
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
-
-// ==========================
-// DOM Reference
-// ==========================
-const bgs = document.getElementById("backgrounds");
 
 // ==========================
 // Animation Loop
