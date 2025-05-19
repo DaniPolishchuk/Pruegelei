@@ -1,4 +1,6 @@
-# 🥋 2D Fighter Game
+# 👊🏿 Prügelei 👊🏿
+
+Developed by Danylo Polishchuk, Justus Koch, Markos Golias (*Group A*)
 
 A **pure JavaScript** 2D fighting game – no frameworks involved!  
 Choose between two game modes: **Local** and **Multiplayer**.
