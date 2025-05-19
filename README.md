@@ -34,7 +34,7 @@ Just connect it to your device and use the following controls:
 
 ## 🚀 Getting Started
 
-1. Make sure you have **Node.js** installed.
+1. Make sure you have **Node.js** installed (version 23.11.0 was used during development).
 2. In the project folder, run:
 
 ```bash
