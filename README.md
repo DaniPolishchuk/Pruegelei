@@ -1,4 +1,4 @@
-# 👊🏿 Prügelei 👊🏿#
+# 👊🏿 Prügelei 👊🏿
 
 Developed by Danylo Polishchuk, Justus Koch, Markos Golias (*Group A*)
 
