@@ -138,7 +138,7 @@ async function setUpGame() {
 
     // 3) initialize fighters (loads their sprites and computes damage)
     await initializeGame();
-    decreaseTimer();
+    //decreaseTimer();
     // 4) start the render loop
     requestAnimationFrame(animate);
 }
@@ -361,7 +361,7 @@ function animate() {
 
     if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
         rematchRequested = true;
-        decreaseTimer();
+        //decreaseTimer();
         determineWinner(player1, player2);
         socket.emit('requestRematch', { roomName: room });
         return;
