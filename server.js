@@ -128,6 +128,47 @@ app.get('/defaultBorderBackground/video', (req, res) => {
     res.end(bg.VideoSource);
 });
 
+app.get('/music', (_, res) => {
+    const songs = db.prepare('SELECT * FROM Music').all();
+    songs.forEach(song => {
+        if (song.Name) {
+            song.Source = `/music/${encodeURIComponent(song.Name)}/source`;
+        }
+    });
+    res.json(songs);
+});
+
+app.get('/music/:name/source', (req, res) => {
+    const song = db.prepare('SELECT Source FROM Music WHERE Name = ?').get(req.params.name);
+    if (!song || !song.Source) return res.status(404).send('Music not found');
+    res.writeHead(200, {
+        'Content-Type': 'audio/ogg',
+        'Content-Length': song.Source.length
+    });
+    res.end(song.Source);
+});
+
+app.get('/ouch', (_, res) => {
+    const ouchs = db.prepare('SELECT * FROM OuchSound').all();
+    ouchs.forEach(ouch => {
+        if (ouch.Gender) {
+            ouch.Source = `/ouch/${encodeURIComponent(ouch.Gender)}/source`;
+        }
+    });
+    res.json(ouchs);
+});
+
+app.get('/ouch/:gender/source', (req, res) => {
+    const ouch = db.prepare('SELECT Source FROM OuchSound WHERE Gender = ?').get(req.params.gender);
+    if (!ouch || !ouch.Source) return res.status(404).send('Ouch sound not found');
+    res.writeHead(200, {
+        'Content-Type': 'audio/ogg',
+        'Content-Length': ouch.Source.length
+    });
+    res.end(ouch.Source);
+});
+
+
 // ==========================
 // Socket.IO: Lobby & Game Logic
 // ==========================

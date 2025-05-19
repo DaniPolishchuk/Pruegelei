@@ -1,7 +1,12 @@
 // ==========================
 // Imports & Socket Setup
 // ==========================
-import {videoSource, videoElement} from "../utils.js";
+import {
+    setSong,
+    videoSource,
+    videoElement,
+    audio
+} from "../utils.js";
 
 const socket = io();
 
@@ -25,6 +30,11 @@ const joinRoomInput = document.getElementById('roomInput');
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Background Audio
+// ==========================
+setSong(audio);
 
 // ==========================
 // Room Rendering

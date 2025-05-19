@@ -45,6 +45,8 @@ export const startButton = document.getElementById("startButton");
 
 export const bgs = document.getElementById("backgrounds");
 
+export const audio = document.getElementById('backgroundMelody');
+
 // ==============================
 // Collision Detection & Winner
 // ==============================
@@ -106,7 +108,7 @@ export async function getFighters() {
     }
 }
 
-export async function getBackgrounds() {
+async function getBackgrounds() {
     try {
         const response = await fetch("/backgrounds");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
@@ -120,6 +122,17 @@ export async function getBackgrounds() {
 export async function getShield() {
     try {
         const response = await fetch("/shield");
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+        return await response.json();
+    } catch (error) {
+        console.error("Error fetching shield image:", error);
+        return [];
+    }
+}
+
+async function getSongs() {
+    try {
+        const response = await fetch("/music");
         if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         return await response.json();
     } catch (error) {
@@ -146,6 +159,7 @@ export async function setFighterData(player, flip, fighterName) {
         player.framesMax = fighter.IdleFrames;
         player.offset = {x: fighter.OffsetX, y: fighter.OffsetY};
         player.flip = flip;
+        player.gender = fighter.Gender;
 
         const baseAttackBoxOffset = {x: fighter.AttackBoxOffsetX, y: fighter.AttackBoxOffsetY};
         player.baseAttackBoxOffset = baseAttackBoxOffset;
@@ -253,6 +267,61 @@ export async function setBackgrounds(bgs) {
     }
 }
 
+export async function setSong(audioElement, currentSong = null) {
+    try {
+
+        if (currentSong) {
+            audioElement.src = `/music/${currentSong}/source`;
+        } else {
+            // Select a random song if none is saved
+            const songs = await getSongs();
+            const randomSong = songs[Math.floor(Math.random() * songs.length)];
+            audioElement.src = `/music/${randomSong.Name}/source`;
+            sessionStorage.setItem('song', randomSong.Name);
+        }
+
+        audioElement.volume = 0.25;
+        audioElement.loop = false;
+        audioElement.muted = false;
+
+        // Play the song if ready
+        const playSong = async () => {
+            try {
+                await audioElement.play();
+            } catch (err) {
+                console.log("Playback prevented:", err);
+            }
+        };
+
+        // Add interaction listeners to trigger play
+        const userTriggeredPlay = async () => {
+            await playSong();
+            // Remove listeners after playback starts
+            document.removeEventListener('click', userTriggeredPlay);
+            document.removeEventListener('keydown', userTriggeredPlay);
+        };
+
+        if (audioElement.paused) {
+            // Add event listeners for user input
+            document.addEventListener('click', userTriggeredPlay);
+            document.addEventListener('keydown', userTriggeredPlay);
+        } else {
+            await playSong();
+        }
+
+        // Play a new song after the current one ends
+        audioElement.addEventListener('ended', async () => {
+            const songs = await getSongs();
+            const currentSong = sessionStorage.getItem('song'); // Get the current song
+            const nextSong = songs.find(song => song.Name !== currentSong) || songs[0]; // Pick the next song
+            sessionStorage.setItem('song', nextSong.Name); // Save the next song
+            await setSong(audioElement, nextSong.Name); // Play the next song
+        });
+    } catch (error) {
+        console.error("Error in setSong:", error);
+    }
+}
+
 // ==============================
 // Game Mechanics
 // ==============================
@@ -306,7 +375,7 @@ export function updateHorizontalMovement(player1, player2, leftPressed, rightPre
 }
 
 export function updateVerticalSprite(player) {
-    if (player.currentSpriteName === "takeHit") return;
+    if (player.isBlocking || player.dead || player.currentSpriteName === "takeHit") return;
     if (player.velocity.y < 0) {
         player.switchSprite("jump");
     } else if (player.velocity.y > 0) {
@@ -335,6 +404,21 @@ export function resolveVerticalCollisionBetweenFighters(player1, player2) {
         }
     }
 }
+
+export function SoundEffect(src, volume = 0.4) {
+    const audio = new Audio(src);
+    audio.volume = volume;
+    return {
+        play: () => {
+            // Create a new instance for each play to allow overlapping sounds
+            const sound = audio.cloneNode();
+            sound.play().catch(err => console.log("Sound effect prevented:", err));
+            // Clean up the cloned audio element after it finishes playing
+            sound.addEventListener('ended', () => sound.remove());
+        }
+    };
+}
+
 
 // ==============================
 // Damage Calculation

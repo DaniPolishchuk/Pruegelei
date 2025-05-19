@@ -1,7 +1,7 @@
 // ==========================
 // Imports
 // ==========================
-import {getShield} from "./utils.js";
+import {getShield, SoundEffect} from "./utils.js";
 
 // ==========================
 // Sprite class: base renderable object
@@ -150,17 +150,14 @@ export class Fighter {
 
         this.framesElapsed++;
 
-        if (!this.isBlocking) {
-            if (this.position.y + this.height + this.velocity.y > groundLvl) {
-                this.velocity.y = 0;
-                this.position.y += this.velocity.y;
-                if (!this.dead) this.position.x += this.velocity.x;
-            } else {
-                this.velocity.y += gravity;
-                this.position.y += this.velocity.y;
-                if (!this.dead) this.position.x += this.velocity.x;
-            }
+        if (this.position.y + this.height + this.velocity.y > groundLvl) {
+            this.velocity.y = 0;
+            this.position.y += this.velocity.y;
+        } else {
+            this.velocity.y += gravity;
+            this.position.y += this.velocity.y;
         }
+        if (!this.dead) this.position.x += this.velocity.x;
 
         if (this.currentSpriteName === 'death') {
             if (this.framesElapsed % this.framesHold === 0) {
@@ -222,6 +219,7 @@ export class Fighter {
     takeHit(damage) {
         if (this.isBlocking || this.dead) return;
         this.health = Math.max(this.health - damage, 0);
+        SoundEffect(`/ouch/${this.gender}/source`).play();
         if (this.health === 0) {
             this.switchSprite('death');
         } else {

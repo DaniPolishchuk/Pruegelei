@@ -4,11 +4,13 @@
 import {
     setFighters,
     setBackgrounds,
+    setSong,
     player1canvas,
     player2canvas,
     videoSource,
     videoElement,
-    bgs
+    bgs,
+    audio
 } from "../utils.js";
 import {MiniFighter} from "../classes.js";
 
@@ -17,6 +19,12 @@ import {MiniFighter} from "../classes.js";
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Video Setup
+// ==========================
+setSong(audio, sessionStorage.getItem('song')); // Resume song and time from sessionStorage
+
 
 // ==========================
 // Player Preview Setup

@@ -4,11 +4,13 @@
 import {
     setBackgrounds,
     setFighters,
+    setSong,
     player1canvas,
     player2canvas,
     videoSource,
     videoElement,
-    bgs
+    bgs,
+    audio
 } from "../utils.js";
 import {MiniFighter} from "../classes.js";
 
@@ -25,6 +27,11 @@ const myId = Number(sessionStorage.getItem("playerId"));
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Background audio setup
+// ==========================
+setSong(audio, window.sessionStorage.getItem('song'));
 
 // ==========================
 // Session Validation
@@ -96,7 +103,9 @@ socket.on("gameStart", ({background}) => {
         chosenImg.classList.add("temp-brightness");
         ctx.drawImage(chosenImg, 0, 0, W, H);
 
-        setTimeout(() => window.location.href = "/fight", 500);
+        setTimeout(() => {
+            window.location.href = "/fight"
+        }, 500);
     }, 5000);
 });
 

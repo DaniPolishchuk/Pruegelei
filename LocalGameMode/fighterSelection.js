@@ -3,13 +3,15 @@
 // ==========================
 import {
     getFighters,
+    setSong,
     player1canvas,
     player2canvas,
     readyButton1,
     readyButton2,
     startButton,
     videoSource,
-    videoElement
+    videoElement,
+    audio
 } from "../utils.js";
 import {MiniFighter} from "../classes.js";
 
@@ -25,6 +27,11 @@ player2.flipped = true;
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Background audio setup
+// ==========================
+setSong(audio, window.sessionStorage.getItem('song'));
 
 // ==========================
 // Fighter selection list

@@ -14,6 +14,7 @@ import {
     updateVerticalSprite,
     resolveVerticalCollisionBetweenFighters,
     pollGamepadInputs,
+    setSong,
     offscreenCanvas,
     offscreenCtx,
     canvas,
@@ -24,6 +25,7 @@ import {
     gravity,
     player1HealthBar,
     player2HealthBar,
+    audio,
 } from "../utils.js";
 
 // ==========================
@@ -65,6 +67,8 @@ async function setUpGame() {
 
     videoSource.src = borderBackground;
     videoElement.load();
+
+    setSong(audio, sessionStorage.getItem("song"))
 
     groundLvl = groundLevel;
 
@@ -129,8 +133,13 @@ function animate() {
     player1.update(offscreenCtx, groundLvl, gravity);
     player2.update(offscreenCtx, groundLvl, gravity);
 
-    player1.flip = player1.position.x >= player2.position.x;
-    player2.flip = !player1.flip;
+    if (player1.position.x < player2.position.x) {
+        player1.flip = player1.dead ? player1.flip : false;
+        player2.flip = player2.dead ? player2.flip : true;
+    } else {
+        player1.flip = player1.dead ? player1.flip : true;
+        player2.flip = player2.dead ? player2.flip : false;
+    }
 
     player1.velocity.x = 0;
     player2.velocity.x = 0;
@@ -203,6 +212,7 @@ window.addEventListener("keydown", (event) => {
                 player1.lastKey = "d";
                 break;
             case "w":
+                if (player1.dead || player1.isBlocking) return;
                 if (player1.position.y + player1.height >= groundLvl) {
                     player1.velocity.y = -JUMP_VELOCITY;
                 }
@@ -255,6 +265,7 @@ window.addEventListener("keydown", (event) => {
                 player2.lastKey = "ArrowRight";
                 break;
             case "ArrowUp":
+                if (player2.dead || player2.isBlocking) return;
                 if (player2.position.y + player2.height >= groundLvl) {
                     player2.velocity.y = -JUMP_VELOCITY;
                 }

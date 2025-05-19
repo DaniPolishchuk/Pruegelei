@@ -3,13 +3,15 @@
 // ==========================
 import {
     getFighters,
+    setSong,
     player1canvas,
     player2canvas,
     readyButton1,
     readyButton2,
     startButton,
     videoSource,
-    videoElement
+    videoElement,
+    audio
 } from "../utils.js";
 import {MiniFighter} from "../classes.js";
 
@@ -17,8 +19,16 @@ const player1 = new MiniFighter(player1canvas, null);
 const player2 = new MiniFighter(player2canvas, null);
 player2.flipped = true;
 
+// ==========================
+// Background video setup
+// ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Background audio setup
+// ==========================
+setSong(audio, window.sessionStorage.getItem('song'));
 
 const allFighters = [];
 let myId = null;

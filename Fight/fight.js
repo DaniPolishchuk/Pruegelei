@@ -14,6 +14,7 @@ import {
     updateVerticalSprite,
     resolveVerticalCollisionBetweenFighters,
     pollGamepadInputs,
+    setSong,
     offscreenCanvas,
     offscreenCtx,
     canvas,
@@ -23,7 +24,8 @@ import {
     videoElement,
     gravity,
     player1HealthBar,
-    player2HealthBar
+    player2HealthBar,
+    audio
 } from "../utils.js";
 
 // ==========================
@@ -63,6 +65,8 @@ async function setUpGame() {
 
     videoSource.src = borderBackground;
     videoElement.load();
+
+    setSong(audio, window.sessionStorage.getItem('song'));
 
     groundLvl = groundLevel;
     backgroundSprite = new Sprite({
@@ -257,11 +261,11 @@ function animate() {
     player2.update(offscreenCtx, groundLvl, gravity);
 
     if (player1.position.x < player2.position.x) {
-        player1.flip = false;
-        player2.flip = true;
+        player1.flip = player1.dead ? player1.flip : false;
+        player2.flip = player2.dead ? player2.flip : true;
     } else {
-        player1.flip = true;
-        player2.flip = false;
+        player1.flip = player1.dead ? player1.flip : true;
+        player2.flip = player2.dead ? player2.flip : false;
     }
 
     player1.velocity.x = 0;
@@ -278,7 +282,11 @@ function animate() {
         "a",
         "d"
     );
-    if ((keys.w.pressed || gp1State.jump) && localFighter.position.y + localFighter.height >= groundLvl) {
+    if (
+        (!localFighter.isBlocking && !localFighter.dead) &&
+        (keys.w.pressed || gp1State.jump) &&
+        localFighter.position.y + localFighter.height >= groundLvl
+    ) {
         localFighter.velocity.y = -JUMP_VELOCITY;
     }
     updateVerticalSprite(localFighter);
