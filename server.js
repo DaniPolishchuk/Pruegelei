@@ -30,6 +30,8 @@ function getLobbyList() {
         .filter(r => r.count < 2);
 }
 
+const rematchResponses = {};
+const reselectResponses = {};
 // ==========================
 // Static Routes
 // ==========================
@@ -303,6 +305,46 @@ io.on('connection', socket => {
     socket.on('hit', ({roomName, defenderId, damage}) =>
         io.to(roomName).emit('confirmedHit', {defenderId, damage})
     );
+
+    socket.on('requestRematch', ({ roomName }) => {
+        rematchResponses[roomName] = new Map();
+        io.in(roomName).emit('showRematchModal');
+      });
+      
+      socket.on('rematchResponse', ({ roomName, decision }) => {
+        if (decision === false) {
+          io.in(roomName).emit('rematchEnd');
+          delete rematchResponses[roomName];
+          return;
+        }
+        const map = rematchResponses[roomName] || new Map();
+        map.set(socket.id, true);
+        rematchResponses[roomName] = map;
+        const total = rooms[roomName]?.players.size || 0;
+        if (map.size === total) {
+          io.in(roomName).emit('rematchStart');
+          delete rematchResponses[roomName];
+        }
+      });
+      
+      socket.on('reselectResponse', ({ roomName }) => {
+        const map = reselectResponses[roomName] || new Map();
+        map.set(socket.id, true);
+        reselectResponses[roomName] = map;
+      
+        const total = rooms[roomName]?.players.size || 0;
+        if (map.size === total) {
+          for (const [, rec] of rooms[roomName].players) {
+            rec.fighterName = null;
+            rec.ready       = false;
+          }
+
+          io.in(roomName).emit('reselectFighters');
+      
+          delete reselectResponses[roomName];
+          delete rematchResponses[roomName];
+        }
+      });
 });
 
 app.use((req, res, next) => {

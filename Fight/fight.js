@@ -36,6 +36,66 @@ const room = sessionStorage.getItem('room');
 const clientId = localStorage.getItem('clientId');
 socket.emit('joinRoom', {roomName: room, clientId});
 
+let rematchRequested = false;
+socket.on('showRematchModal', () => {
+    console.log('[CLIENT] showRematchModal');
+    const modal       = document.getElementById('rematchModal');
+    const reselectBtn = document.getElementById('rematchReselect');
+    const yesBtn      = document.getElementById('rematchYes');
+    const noBtn       = document.getElementById('rematchNo');
+    const header      = modal.querySelector('h2');
+  
+    yesBtn.disabled      =
+    reselectBtn.disabled =
+    noBtn.disabled       = false;
+  
+    header.textContent = 'Rematch?';
+
+    yesBtn.onclick = () => {
+        console.log('[CLIENT] Rematch → true');
+        socket.emit('rematchResponse', { roomName: room, decision: true });
+        header.textContent = 'Waiting…';
+        yesBtn.disabled      =
+        reselectBtn.disabled =
+        noBtn.disabled       = true;
+    };
+    
+    reselectBtn.onclick = () => {
+        console.log('[CLIENT] Reselect → click');
+        socket.emit('reselectResponse', { roomName: room });
+        header.textContent = 'Waiting for reselect vote…';
+        yesBtn.disabled      =
+        reselectBtn.disabled =
+        noBtn.disabled       = true;
+    };
+    
+    noBtn.onclick = () => {
+        console.log('[CLIENT] Rematch → false');
+        socket.emit('rematchResponse', { roomName: room, decision: false });
+        header.textContent = 'Leaving…';
+        yesBtn.disabled      =
+        reselectBtn.disabled =
+        noBtn.disabled       = true;
+    };
+
+  modal.style.display = 'flex';
+});
+
+socket.on('rematchStart', () => {
+  console.log('[CLIENT] rematchStart → reload');
+  window.location.href = '/fight';
+});
+
+socket.on('reselectFighters', () => {
+    console.log('[CLIENT] rematchStart → reload');
+    window.location.href = '/fighterSelection';
+  });
+
+socket.on('rematchEnd', () => {
+  console.log('[CLIENT] rematchEnd → lobby');
+  window.location.href = '/';
+});
+
 // ==========================
 // Key state definitions
 // ==========================
@@ -299,9 +359,13 @@ function animate() {
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
 
-    if (player1.health <= 0 || player2.health <= 0) {
+    if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
+        rematchRequested = true;
+        decreaseTimer();
         determineWinner(player1, player2);
-    }
+        socket.emit('requestRematch', { roomName: room });
+        return;
+      }
 
     offscreenCtx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
