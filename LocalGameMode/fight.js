@@ -3,7 +3,9 @@
 // ==========================
 import {Sprite, Fighter} from "../classes.js";
 import {
-    decreaseTimer,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
     determineDamage,
     determineWinner,
     rectangularCollision,
@@ -41,6 +43,28 @@ const keys = {
 };
 
 let groundLvl, background;
+let rematchRequested = false;
+let isPaused         = false;
+
+// ==========================
+// Rematch Modal (local)
+// ==========================
+function showRematchModal() {
+    const modal       = document.getElementById('rematchModal');
+    const reselectBtn = document.getElementById('rematchReselect');
+    const yesBtn      = document.getElementById('rematchYes');
+    const noBtn       = document.getElementById('rematchNo');
+    const header      = modal.querySelector('h2');
+  
+    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
+    header.textContent = 'Rematch?';
+  
+    yesBtn.onclick      = () => {header.textContent = 'Reloading…'; window.location.reload(); };
+    reselectBtn.onclick = () => { header.textContent = 'Reselecting…'; window.history.go(-2); };
+    noBtn.onclick       = () => { header.textContent = 'Leaving…';     window.location.href = '/'; };
+  
+    modal.style.display = 'flex';
+}  
 
 // ==========================
 // Player Setup
@@ -56,8 +80,6 @@ const player2 = new Fighter({
     velocity: {x: 0, y: 0},
     canvas
 });
-
-decreaseTimer(player1, player2);
 
 // ==========================
 // Game Initialization
@@ -81,6 +103,18 @@ async function setUpGame() {
 
     await initializeGame();
     requestAnimationFrame(animate);
+    const initial = parseInt(document.getElementById('timer').textContent, 10);
+    startTimer(
+      initial,
+      v  => document.getElementById('timer').textContent = v,
+      () => {
+        determineWinner(player1, player2);
+        if (!rematchRequested) {
+          rematchRequested = true;
+          showRematchModal();
+        }
+      }
+    );
 }
 
 async function initializeGame() {
@@ -118,6 +152,7 @@ let prevGp2Attack = false;
 
 function animate() {
     requestAnimationFrame(animate);
+    if (isPaused) return;
 
     const {scale, cameraX} = calculateCamera(player1, player2);
 
@@ -180,9 +215,12 @@ function animate() {
     processAttackCollision(player1, player2, player2HealthBar);
     processAttackCollision(player2, player1, player1HealthBar);
 
-    if (player1.health <= 0 || player2.health <= 0) {
+    if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
+        rematchRequested = true;
         determineWinner(player1, player2);
-    }
+        showRematchModal();
+        return;
+      }
 
     offscreenCtx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -195,6 +233,28 @@ function animate() {
 window.addEventListener("keydown", (event) => {
     if (event.repeat) return;
 
+    if (event.key === '5') {
+        isPaused = !isPaused;
+        const overlay = document.getElementById('pauseOverlay');
+        if (isPaused) {
+          pauseTimer();
+          overlay.classList.remove('hidden');
+        } else {
+          resumeTimer(
+            v => document.getElementById('timer').textContent = v,
+            () => {
+              determineWinner(player1, player2);
+              if (!rematchRequested) {
+                rematchRequested = true;
+                showRematchModal();
+              }
+            }
+          );
+          overlay.classList.add('hidden');
+        }
+        return;
+    }
+   
     // Player 1
     if (!player1.dead) {
         switch (event.key) {

@@ -65,7 +65,7 @@ export function rectangularCollision(f1, f2) {
 }
 
 export function determineWinner(p1, p2) {
-    clearTimeout(timerID);
+    pauseTimer();
     const resEl = document.querySelector("#gameResult");
     resEl.style.display = "flex";
     if (p1.health > p2.health) resEl.textContent = "Player1 won";
@@ -76,21 +76,41 @@ export function determineWinner(p1, p2) {
 // ==============================
 // Timer Logic
 // ==============================
+let _timerId = null;
+let _remaining = 0;
 
-const timerEl = document.getElementById("timer");
-let timerValue = timerEl ? parseInt(timerEl.textContent, 10) : null;
-let timerID;
+export function startTimer(initialSeconds, onTick, onEnd) {
+  _remaining = initialSeconds;
+  onTick(_remaining);
 
-export function decreaseTimer(player1, player2) {
-    const el = document.getElementById("timer");
-    if (timerValue > 0) {
-        timerValue--;
-        el.textContent = timerValue;
-        timerID = setTimeout(() => decreaseTimer(player1, player2), 1000);
-    } else {
-        clearTimeout(timerID);
-        determineWinner(player1, player2);
+  _timerId = setInterval(() => {
+    _remaining--;
+    onTick(_remaining);
+    if (_remaining <= 0) {
+      clearInterval(_timerId);
+      onEnd();
     }
+  }, 1000);
+}
+
+export function pauseTimer() {
+  if (_timerId) {
+    clearInterval(_timerId);
+    _timerId = null;
+  }
+}
+
+export function resumeTimer(onTick, onEnd) {
+  if (_timerId) return;  // already running
+  onTick(_remaining);
+  _timerId = setInterval(() => {
+    _remaining--;
+    onTick(_remaining);
+    if (_remaining <= 0) {
+      clearInterval(_timerId);
+      onEnd();
+    }
+  }, 1000);
 }
 
 // ==============================

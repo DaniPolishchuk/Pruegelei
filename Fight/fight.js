@@ -3,7 +3,9 @@
 // ==========================
 import {Fighter, Sprite} from "../classes.js";
 import {
-    decreaseTimer,
+    startTimer,
+    pauseTimer,
+    resumeTimer,
     determineDamage,
     determineWinner,
     rectangularCollision,
@@ -120,7 +122,6 @@ let prevGpAttack = false;
 // Game setup
 // ==========================
 async function setUpGame() {
-    // 1) pick up the chosen background name
     const {imageSrc, groundLevel, borderBackground} = await setBackground(sessionStorage.getItem("background"));
 
     videoSource.src = borderBackground;
@@ -136,10 +137,7 @@ async function setUpGame() {
         height: canvas.height
     });
 
-    // 3) initialize fighters (loads their sprites and computes damage)
     await initializeGame();
-    //decreaseTimer();
-    // 4) start the render loop
     requestAnimationFrame(animate);
 }
 
@@ -173,7 +171,12 @@ const player2 = new Fighter({
     velocity: {x: 0, y: 0},
     canvas
 });
-decreaseTimer(player1, player2);
+const initial = parseInt(document.getElementById('timer').textContent, 10);
+startTimer(
+  initial,
+  v => document.getElementById('timer').textContent = v,
+  () => determineWinner(player1, player2)
+);
 
 const localFighter = myPlayerId === 1 ? player1 : player2;
 const remoteFighter = myPlayerId === 1 ? player2 : player1;
@@ -237,6 +240,24 @@ socket.on("remoteState", data => {
     bar.style.width = Math.max(data.health, 0) + '%';
 });
 
+let isPaused = false;
+
+socket.on('gamePaused', () => {
+    isPaused = !isPaused;
+    const overlay = document.getElementById('pauseOverlay');
+  
+    if (isPaused) {
+      pauseTimer();
+      overlay.classList.remove('hidden');
+    } else {
+      resumeTimer(
+        v => document.getElementById('timer').textContent = v,
+        () => determineWinner(player1, player2)
+      );
+      overlay.classList.add('hidden');
+    }
+});
+
 // ==========================
 // Start attack
 // ==========================
@@ -298,6 +319,7 @@ function sendMyState() {
 // ==========================
 function animate() {
     requestAnimationFrame(animate);
+    if (isPaused) return;
     const {gp1State} = pollGamepadInputs(localFighter, remoteFighter);
 
     localFighter.isBlocking = keys.s.pressed || gp1State.block;
@@ -361,7 +383,6 @@ function animate() {
 
     if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
         rematchRequested = true;
-        //decreaseTimer();
         determineWinner(player1, player2);
         socket.emit('requestRematch', { roomName: room });
         return;
@@ -399,4 +420,10 @@ window.addEventListener('keyup', event => {
     }
     keys[event.key].pressed = false;
     socket.emit('playerInput', {roomName: room, key: event.key, pressed: false});
+});
+
+window.addEventListener('keydown', e => {
+    if (e.key === '5' && !e.repeat) {
+      socket.emit('togglePause', { roomName: room });
+    }
 });

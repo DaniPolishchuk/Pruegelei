@@ -123,6 +123,16 @@ function getReady(button) {
     }
 }
 
+window.addEventListener('pageshow', () => {
+    [readyButton1, readyButton2].forEach(btn => {
+      btn.pressed = false;
+      btn.style.backgroundColor = 'black';
+      btn.style.color           = 'orange';
+    });
+  
+    if (startButton) startButton.style.visibility = 'hidden';
+});
+
 function startBgPicking() {
     sessionStorage.setItem("player1", player1.name);
     sessionStorage.setItem("player2", player2.name);

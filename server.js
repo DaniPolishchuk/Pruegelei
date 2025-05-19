@@ -305,6 +305,10 @@ io.on('connection', socket => {
     socket.on('hit', ({roomName, defenderId, damage}) =>
         io.to(roomName).emit('confirmedHit', {defenderId, damage})
     );
+    
+    socket.on('togglePause', ({ roomName }) => {
+        io.to(roomName).emit('gamePaused');
+      });
 
     socket.on('requestRematch', ({ roomName }) => {
         rematchResponses[roomName] = new Map();
