@@ -16,8 +16,8 @@ import {MiniFighter} from "../classes.js";
 // ==========================
 // Player preview setup
 // ==========================
-export const player1 = new MiniFighter(player1canvas, null);
-export const player2 = new MiniFighter(player2canvas, null);
+const player1 = new MiniFighter(player1canvas, null);
+const player2 = new MiniFighter(player2canvas, null);
 player2.flipped = true;
 
 // ==========================

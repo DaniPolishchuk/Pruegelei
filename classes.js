@@ -150,6 +150,18 @@ export class Fighter {
 
         this.framesElapsed++;
 
+        if (!this.isBlocking) {
+            if (this.position.y + this.height + this.velocity.y > groundLvl) {
+                this.velocity.y = 0;
+                this.position.y += this.velocity.y;
+                if (!this.dead) this.position.x += this.velocity.x;
+            } else {
+                this.velocity.y += gravity;
+                this.position.y += this.velocity.y;
+                if (!this.dead) this.position.x += this.velocity.x;
+            }
+        }
+
         if (this.currentSpriteName === 'death') {
             if (this.framesElapsed % this.framesHold === 0) {
                 if (this.framesCurrent < this.framesMax - 1) {
@@ -204,15 +216,6 @@ export class Fighter {
             if (this.velocity.y > 0) {
                 this.position.y += this.velocity.y;
             }
-        } else {
-            this.position.x += this.velocity.x;
-            this.position.y += this.velocity.y;
-        }
-
-        if (this.position.y + this.height + this.velocity.y > groundLvl) {
-            this.velocity.y = 0;
-        } else {
-            this.velocity.y += gravity;
         }
     }
 
@@ -349,7 +352,7 @@ export class MiniFighter {
         this.framesMax = idleFrames || 0;
         this.framesCurrent = 0;
         this.framesElapsed = 0;
-        this.framesHold = 4;
+        this.framesHold = 7;
         this.offset = offset || {x: 0, y: 0};
         this.flipped = false;
         this.name = null;

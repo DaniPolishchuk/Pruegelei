@@ -1,20 +1,29 @@
 // ==========================
 // Imports
 // ==========================
-import {player1, player2} from "./fighterSelection.js";
 import {
     setFighters,
     setBackgrounds,
+    player1canvas,
+    player2canvas,
     videoSource,
     videoElement,
     bgs
 } from "../utils.js";
+import {MiniFighter} from "../classes.js";
 
 // ==========================
 // Video Setup
 // ==========================
 videoSource.src = '/defaultBorderBackground/video';
 videoElement.load();
+
+// ==========================
+// Player Preview Setup
+// ==========================
+const player1 = new MiniFighter(player1canvas, null);
+const player2 = new MiniFighter(player2canvas, null);
+player2.flipped = true;
 
 // ==========================
 // Animation Loop
