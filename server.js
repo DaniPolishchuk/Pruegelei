@@ -264,6 +264,9 @@ io.on('connection', socket => {
     );
 });
 
+app.use((req, res, next) => {
+    res.status(404).sendFile(path.join(__dirname, '404Error', '404Error.html'));
+});
 // ==========================
 // Server Start
 // ==========================
