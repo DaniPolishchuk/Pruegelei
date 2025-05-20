@@ -28,6 +28,11 @@ import {
     player1HealthBar,
     player2HealthBar,
     audio,
+    yesBtn,
+    reselectBtn,
+    noBtn,
+    header,
+    modal
 } from "../utils.js";
 
 // ==========================
@@ -44,27 +49,31 @@ const keys = {
 
 let groundLvl, background;
 let rematchRequested = false;
-let isPaused         = false;
+let isPaused = false;
 
 // ==========================
 // Rematch Modal (local)
 // ==========================
 function showRematchModal() {
-    const modal       = document.getElementById('rematchModal');
-    const reselectBtn = document.getElementById('rematchReselect');
-    const yesBtn      = document.getElementById('rematchYes');
-    const noBtn       = document.getElementById('rematchNo');
-    const header      = modal.querySelector('h2');
-  
+
     yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
     header.textContent = 'Rematch?';
-  
-    yesBtn.onclick      = () => {header.textContent = 'Reloading…'; window.location.reload(); };
-    reselectBtn.onclick = () => { header.textContent = 'Reselecting…'; window.history.go(-2); };
-    noBtn.onclick       = () => { header.textContent = 'Leaving…';     window.location.href = '/'; };
-  
+
+    yesBtn.onclick = () => {
+        header.textContent = 'Reloading…';
+        window.location.reload();
+    };
+    reselectBtn.onclick = () => {
+        header.textContent = 'Reselecting…';
+        window.history.go(-2);
+    };
+    noBtn.onclick = () => {
+        header.textContent = 'Leaving…';
+        window.location.href = '/';
+    };
+
     modal.style.display = 'flex';
-}  
+}
 
 // ==========================
 // Player Setup
@@ -105,15 +114,15 @@ async function setUpGame() {
     requestAnimationFrame(animate);
     const initial = parseInt(document.getElementById('timer').textContent, 10);
     startTimer(
-      initial,
-      v  => document.getElementById('timer').textContent = v,
-      () => {
-        determineWinner(player1, player2);
-        if (!rematchRequested) {
-          rematchRequested = true;
-          showRematchModal();
+        initial,
+        v => document.getElementById('timer').textContent = v,
+        () => {
+            determineWinner(player1, player2);
+            if (!rematchRequested) {
+                rematchRequested = true;
+                showRematchModal();
+            }
         }
-      }
     );
 }
 
@@ -220,7 +229,7 @@ function animate() {
         determineWinner(player1, player2);
         showRematchModal();
         return;
-      }
+    }
 
     offscreenCtx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -237,24 +246,24 @@ window.addEventListener("keydown", (event) => {
         isPaused = !isPaused;
         const overlay = document.getElementById('pauseOverlay');
         if (isPaused) {
-          pauseTimer();
-          overlay.classList.remove('hidden');
+            pauseTimer();
+            overlay.classList.remove('hidden');
         } else {
-          resumeTimer(
-            v => document.getElementById('timer').textContent = v,
-            () => {
-              determineWinner(player1, player2);
-              if (!rematchRequested) {
-                rematchRequested = true;
-                showRematchModal();
-              }
-            }
-          );
-          overlay.classList.add('hidden');
+            resumeTimer(
+                v => document.getElementById('timer').textContent = v,
+                () => {
+                    determineWinner(player1, player2);
+                    if (!rematchRequested) {
+                        rematchRequested = true;
+                        showRematchModal();
+                    }
+                }
+            );
+            overlay.classList.add('hidden');
         }
         return;
     }
-   
+
     // Player 1
     if (!player1.dead) {
         switch (event.key) {

@@ -47,6 +47,11 @@ export const bgs = document.getElementById("backgrounds");
 
 export const audio = document.getElementById('backgroundMelody');
 
+export const modal = document.getElementById('rematchModal');
+export const reselectBtn = document.getElementById('rematchReselect');
+export const yesBtn = document.getElementById('rematchYes');
+export const noBtn = document.getElementById('rematchNo');
+export const header = modal?.querySelector('h2');
 // ==============================
 // Collision Detection & Winner
 // ==============================
@@ -80,37 +85,37 @@ let _timerId = null;
 let _remaining = 0;
 
 export function startTimer(initialSeconds, onTick, onEnd) {
-  _remaining = initialSeconds;
-  onTick(_remaining);
-
-  _timerId = setInterval(() => {
-    _remaining--;
+    _remaining = initialSeconds;
     onTick(_remaining);
-    if (_remaining <= 0) {
-      clearInterval(_timerId);
-      onEnd();
-    }
-  }, 1000);
+
+    _timerId = setInterval(() => {
+        _remaining--;
+        onTick(_remaining);
+        if (_remaining <= 0) {
+            clearInterval(_timerId);
+            onEnd();
+        }
+    }, 1000);
 }
 
 export function pauseTimer() {
-  if (_timerId) {
-    clearInterval(_timerId);
-    _timerId = null;
-  }
+    if (_timerId) {
+        clearInterval(_timerId);
+        _timerId = null;
+    }
 }
 
 export function resumeTimer(onTick, onEnd) {
-  if (_timerId) return;  // already running
-  onTick(_remaining);
-  _timerId = setInterval(() => {
-    _remaining--;
+    if (_timerId) return;  // already running
     onTick(_remaining);
-    if (_remaining <= 0) {
-      clearInterval(_timerId);
-      onEnd();
-    }
-  }, 1000);
+    _timerId = setInterval(() => {
+        _remaining--;
+        onTick(_remaining);
+        if (_remaining <= 0) {
+            clearInterval(_timerId);
+            onEnd();
+        }
+    }, 1000);
 }
 
 // ==============================

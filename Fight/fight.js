@@ -27,7 +27,12 @@ import {
     gravity,
     player1HealthBar,
     player2HealthBar,
-    audio
+    audio,
+    yesBtn,
+    reselectBtn,
+    noBtn,
+    header,
+    modal
 } from "../utils.js";
 
 // ==========================
@@ -40,62 +45,50 @@ socket.emit('joinRoom', {roomName: room, clientId});
 
 let rematchRequested = false;
 socket.on('showRematchModal', () => {
-    console.log('[CLIENT] showRematchModal');
-    const modal       = document.getElementById('rematchModal');
-    const reselectBtn = document.getElementById('rematchReselect');
-    const yesBtn      = document.getElementById('rematchYes');
-    const noBtn       = document.getElementById('rematchNo');
-    const header      = modal.querySelector('h2');
-  
-    yesBtn.disabled      =
-    reselectBtn.disabled =
-    noBtn.disabled       = false;
-  
+
+    yesBtn.disabled =
+        reselectBtn.disabled =
+            noBtn.disabled = false;
+
     header.textContent = 'Rematch?';
 
     yesBtn.onclick = () => {
-        console.log('[CLIENT] Rematch → true');
-        socket.emit('rematchResponse', { roomName: room, decision: true });
+        socket.emit('rematchResponse', {roomName: room, decision: true});
         header.textContent = 'Waiting…';
-        yesBtn.disabled      =
-        reselectBtn.disabled =
-        noBtn.disabled       = true;
-    };
-    
-    reselectBtn.onclick = () => {
-        console.log('[CLIENT] Reselect → click');
-        socket.emit('reselectResponse', { roomName: room });
-        header.textContent = 'Waiting for reselect vote…';
-        yesBtn.disabled      =
-        reselectBtn.disabled =
-        noBtn.disabled       = true;
-    };
-    
-    noBtn.onclick = () => {
-        console.log('[CLIENT] Rematch → false');
-        socket.emit('rematchResponse', { roomName: room, decision: false });
-        header.textContent = 'Leaving…';
-        yesBtn.disabled      =
-        reselectBtn.disabled =
-        noBtn.disabled       = true;
+        yesBtn.disabled =
+            reselectBtn.disabled =
+                noBtn.disabled = true;
     };
 
-  modal.style.display = 'flex';
+    reselectBtn.onclick = () => {
+        socket.emit('reselectResponse', {roomName: room});
+        header.textContent = 'Waiting for reselect vote…';
+        yesBtn.disabled =
+            reselectBtn.disabled =
+                noBtn.disabled = true;
+    };
+
+    noBtn.onclick = () => {
+        socket.emit('rematchResponse', {roomName: room, decision: false});
+        header.textContent = 'Leaving…';
+        yesBtn.disabled =
+            reselectBtn.disabled =
+                noBtn.disabled = true;
+    };
+
+    modal.style.display = 'flex';
 });
 
 socket.on('rematchStart', () => {
-  console.log('[CLIENT] rematchStart → reload');
-  window.location.href = '/fight';
+    window.location.href = '/fight';
 });
 
 socket.on('reselectFighters', () => {
-    console.log('[CLIENT] rematchStart → reload');
     window.location.href = '/fighterSelection';
-  });
+});
 
 socket.on('rematchEnd', () => {
-  console.log('[CLIENT] rematchEnd → lobby');
-  window.location.href = '/';
+    window.location.href = '/';
 });
 
 // ==========================
@@ -173,9 +166,9 @@ const player2 = new Fighter({
 });
 const initial = parseInt(document.getElementById('timer').textContent, 10);
 startTimer(
-  initial,
-  v => document.getElementById('timer').textContent = v,
-  () => determineWinner(player1, player2)
+    initial,
+    v => document.getElementById('timer').textContent = v,
+    () => determineWinner(player1, player2)
 );
 
 const localFighter = myPlayerId === 1 ? player1 : player2;
@@ -245,16 +238,16 @@ let isPaused = false;
 socket.on('gamePaused', () => {
     isPaused = !isPaused;
     const overlay = document.getElementById('pauseOverlay');
-  
+
     if (isPaused) {
-      pauseTimer();
-      overlay.classList.remove('hidden');
+        pauseTimer();
+        overlay.classList.remove('hidden');
     } else {
-      resumeTimer(
-        v => document.getElementById('timer').textContent = v,
-        () => determineWinner(player1, player2)
-      );
-      overlay.classList.add('hidden');
+        resumeTimer(
+            v => document.getElementById('timer').textContent = v,
+            () => determineWinner(player1, player2)
+        );
+        overlay.classList.add('hidden');
     }
 });
 
@@ -384,9 +377,9 @@ function animate() {
     if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
         rematchRequested = true;
         determineWinner(player1, player2);
-        socket.emit('requestRematch', { roomName: room });
+        socket.emit('requestRematch', {roomName: room});
         return;
-      }
+    }
 
     offscreenCtx.restore();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -424,6 +417,6 @@ window.addEventListener('keyup', event => {
 
 window.addEventListener('keydown', e => {
     if (e.key === '5' && !e.repeat) {
-      socket.emit('togglePause', { roomName: room });
+        socket.emit('togglePause', {roomName: room});
     }
 });
