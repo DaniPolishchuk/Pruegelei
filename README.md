@@ -43,12 +43,31 @@ Just connect it to your device and use the following controls:
 1. Make sure you have **Node.js** installed (version 23.11.0 was used during development).
 2. In the project folder, run:
 
-## Getting Started using Docker (make sure you have Docker installed)
+## Getting Started using Docker on MacOs
 
-1. **docker pull pilander/pruegelei:latest**
-2. **docker run -d --name pruegelei_app -p 5001:5001 pruegelei**
-3. **docker stop pruegelei_app**
-4. **docker rm pruegelei_app**
+# Install Homebrew if not already installed
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Install Colima and Docker
+brew install colima
+brew install docker
+
+# Start Colima
+colima start
+
+# Stop and remove the existing container (in case it exists)
+docker stop pruegelei_app
+docker rm pruegelei_app
+
+# Remove the existing image (to ensure a clean rebuild)
+docker rmi pilander/pruegelei:latest
+
+# Pull the base image
+docker pull pilander/pruegelei:latest
+
+# Run the container
+docker run -d --platform linux/amd64 --name pruegelei_app -p 5001:5001 pilander/pruegelei:latest
+
 
 ## Updating the Docker Container
 
