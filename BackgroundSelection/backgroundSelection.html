@@ -1,44 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Prügelei</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/BackgroundSelection/backgroundSelection.css">
-</head>
-<body>
-<div class="video-container">
-    <video autoplay loop muted playsinline id="borderBackground">
-        <source id="videoSource" type="video/mp4">
-    </video>
-    <div id="mainMenu">
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="/BackgroundSelection/backgroundSelection.css"
+    />
+  </head>
+  <body>
+    <div class="video-container">
+      <video autoplay loop muted playsinline id="borderBackground">
+        <source id="videoSource" type="video/mp4" />
+      </video>
+      <div id="mainMenu">
         <div id="gameTitle">PRÜGELEI</div>
         <div id="pickedBackgroundAndFighters">
-            <canvas id="player1canvas"></canvas>
-            <div id="pickedBackground">
-                <!-- Canvas for flashing BG -->
-                <canvas id="pickedBackgroundCanvas" width="650" height="290"></canvas>
-            </div>
-            <canvas id="player2canvas"></canvas>
+          <canvas id="player1canvas"></canvas>
+          <div id="pickedBackground">
+            <!-- Canvas for flashing BG -->
+            <canvas
+              id="pickedBackgroundCanvas"
+              width="650"
+              height="290"
+            ></canvas>
+          </div>
+          <canvas id="player2canvas"></canvas>
         </div>
         <div id="backgrounds"></div>
+      </div>
     </div>
-</div>
-<audio id="backgroundMelody" loop autoplay preload="auto"></audio>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    (function loadByPath() {
+    <audio id="backgroundMelody" loop autoplay preload="auto"></audio>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function loadByPath() {
         const mapping = {
-            '/background': '/BackgroundSelection/backgroundSelection.js',
-            '/backgroundL': '/LocalGameMode/backgroundSelection.js'
+          "/background": "/BackgroundSelection/backgroundSelection.js",
+          "/backgroundL": "/LocalGameMode/backgroundSelection.js",
         };
         const src = mapping[window.location.pathname];
-        const s = document.createElement('script');
+        const s = document.createElement("script");
         s.src = src;
-        s.type = 'module';
+        s.type = "module";
         document.head.appendChild(s);
-    })();
-</script>
-</body>
+      })();
+    </script>
+  </body>
 </html>

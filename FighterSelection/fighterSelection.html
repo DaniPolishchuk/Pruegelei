@@ -1,49 +1,54 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>Prügelei</title>
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/FighterSelection/fighterSelection.css">
-</head>
-<body>
-<div class="video-container">
-    <video autoplay loop muted playsinline id="borderBackground">
-        <source id="videoSource" type="video/mp4">
-    </video>
-    <div id="mainMenu">
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/FighterSelection/fighterSelection.css" />
+  </head>
+  <body>
+    <div class="video-container">
+      <video autoplay loop muted playsinline id="borderBackground">
+        <source id="videoSource" type="video/mp4" />
+      </video>
+      <div id="mainMenu">
         <div id="gameTitle">PRÜGELEI</div>
         <div id="fighterSelection">
-            <div id="fighter1">Player 1
-                <canvas id="player1canvas"></canvas>
-            </div>
-            <div id="availableFighters"></div>
-            <div id="fighter2">Player 2
-                <canvas id="player2canvas"></canvas>
-            </div>
+          <div id="fighter1">
+            Player 1
+            <canvas id="player1canvas"></canvas>
+          </div>
+          <div id="availableFighters"></div>
+          <div id="fighter2">
+            Player 2
+            <canvas id="player2canvas"></canvas>
+          </div>
         </div>
         <div id="readyButtons">
-            <button id="readyButton1" class="readyButton">Ready</button>
-            <button id="startButton">!!! LASS UNS PRÜGELN !!!</button>
-            <button id="readyButton2" class="readyButton">Ready</button>
+          <button id="readyButton1" class="readyButton">Ready</button>
+          <button id="startButton">!!! LASS UNS PRÜGELN !!!</button>
+          <button id="readyButton2" class="readyButton">Ready</button>
         </div>
+      </div>
     </div>
-</div>
-<audio id="backgroundMelody" loop autoplay preload="auto"></audio>
-<script src="/socket.io/socket.io.js"></script>
-<script>
-    (function loadByPath() {
+    <audio id="backgroundMelody" loop autoplay preload="auto"></audio>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      (function loadByPath() {
         const mapping = {
-            '/fighterSelection/': '/FighterSelection/fighterSelection.js',
-            '/fighterSelectionL': '/LocalGameMode/fighterSelection.js'
+          "/fighterSelection/": "/FighterSelection/fighterSelection.js",
+          "/fighterSelectionL": "/LocalGameMode/fighterSelection.js",
         };
         const src = mapping[window.location.pathname];
-        const s = document.createElement('script');
+        const s = document.createElement("script");
         s.src = src;
-        s.type = 'module';
+        s.type = "module";
         document.head.appendChild(s);
-    })();
-</script>
-</body>
+      })();
+    </script>
+  </body>
 </html>

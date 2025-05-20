@@ -1,184 +1,189 @@
-
 * {
-    box-sizing: border-box;
-    font-family: 'Press Start 2P', cursive;
-    overflow: hidden;
+  box-sizing: border-box;
+  font-family: "Press Start 2P", cursive;
+  overflow: hidden;
 }
 
 body {
-    text-align: center;
+  text-align: center;
 }
 
 .video-container video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
-    z-index: -1;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  z-index: -1;
 }
 
 #gameContainer {
-    position: relative;
-    display: inline-block;
-    margin: 0 auto;
+  position: relative;
+  display: inline-block;
+  margin: 0 auto;
 }
 
 .health-bar-container {
-    position: absolute;
-    display: flex;
-    width: 100%;
-    align-items: center;
-    padding: 20px;
+  position: absolute;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  padding: 20px;
 }
 
 #player1HealthBar {
-    position: relative;
-    width: 100%;
-    display: flex;
-    justify-content: flex-end;
-    border-top: 4px solid white;
-    border-left: 4px solid white;
-    border-bottom: 4px solid white;
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 4px solid white;
+  border-left: 4px solid white;
+  border-bottom: 4px solid white;
 }
 
 #player1Health {
-    position: absolute;
-    background: #818cf8;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
+  position: absolute;
+  background: #818cf8;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
 }
 
 .health-bar {
-    background-color: red;
-    height: 30px;
-    width: 100%
+  background-color: red;
+  height: 30px;
+  width: 100%;
 }
 
 #timer {
-    background-color: red;
-    font-size: 45px;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0px black, 4px 4px 0px gray;
-    color: white;
-    height: 100px;
-    width: 100px;
-    flex-shrink: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 3px solid white;
+  background-color: red;
+  font-size: 45px;
+  text-transform: uppercase;
+  text-shadow:
+    2px 2px 0px black,
+    4px 4px 0px gray;
+  color: white;
+  height: 100px;
+  width: 100px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3px solid white;
 }
 
 #player2HealthBar {
-    position: relative;
-    width: 100%;
-    border-top: 4px solid white;
-    border-bottom: 4px solid white;
-    border-right: 4px solid white;
+  position: relative;
+  width: 100%;
+  border-top: 4px solid white;
+  border-bottom: 4px solid white;
+  border-right: 4px solid white;
 }
 
 #player2Health {
-    position: absolute;
-    background: #818cf8;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
+  position: absolute;
+  background: #818cf8;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
 }
 
 #gameResult {
-    font-size: 100px;
-    text-transform: uppercase;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
-    position: absolute;
-    color: orange;
-    align-items: center;
-    justify-content: center;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    display: none;
+  font-size: 100px;
+  text-transform: uppercase;
+  text-shadow:
+    2px 2px 0px yellow,
+    4px 4px 0px red;
+  position: absolute;
+  color: orange;
+  align-items: center;
+  justify-content: center;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: none;
 }
 
 #rematchModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.9);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 #rematchModal .modalContent {
-    background: rgba(0, 0, 0, 0.8);
-    border: 3px solid orange;
-    padding: 40px;
-    text-align: center;
-    color: orange;
-    text-shadow: 2px 2px 0px yellow, 4px 4px 0px red;
-    max-width: 80%;
-    border-radius: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  border: 3px solid orange;
+  padding: 40px;
+  text-align: center;
+  color: orange;
+  text-shadow:
+    2px 2px 0px yellow,
+    4px 4px 0px red;
+  max-width: 80%;
+  border-radius: 10px;
 }
 
 #rematchModal .modalContent h2 {
-    font-size: 36px;
-    margin-bottom: 20px;
+  font-size: 36px;
+  margin-bottom: 20px;
 }
 
 #rematchModal .modalContent button {
-    margin: 0 10px;
-    padding: 10px 20px;
-    font-size: 24px;
-    border: 2px solid orange;
-    background: black;
-    color: orange;
-    cursor: pointer;
-    transition: 0.3s;
+  margin: 0 10px;
+  padding: 10px 20px;
+  font-size: 24px;
+  border: 2px solid orange;
+  background: black;
+  color: orange;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
 #rematchModal .modalContent button:hover {
-    background: orange;
-    color: black;
+  background: orange;
+  color: black;
 }
 
 #pauseOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
 }
 
 #pauseOverlay .modalContent {
-    background: black;
-    border: 3px solid white;
-    padding: 40px;
-    text-align: center;
-    color: white;
-    font-size: 36px;
-    border-radius: 10px;
+  background: black;
+  border: 3px solid white;
+  padding: 40px;
+  text-align: center;
+  color: white;
+  font-size: 36px;
+  border-radius: 10px;
 }
 
 .hidden {
-    display: none !important;
+  display: none !important;
 }
 
 canvas {
-    border: 1px solid darkblue;
+  border: 1px solid darkblue;
 }
