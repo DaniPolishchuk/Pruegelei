@@ -74,11 +74,11 @@ docker run -d --platform linux/amd64 --name pruegelei_app -p 5001:5001 pilander/
 
 ```bash
 # Build the image locally
-docker build -t pilander/pruegelei:latest .**
+docker build -t pilander/pruegelei:latest
 # Log in to Docker Hub (one-time)
 docker login
 # Push to the registry
-docker push pilander/pruegelei:latest**
+docker push pilander/pruegelei:latest
 ```
 
 ## Start the server just using Node.js
