@@ -381,6 +381,5 @@ app.use((req, res) => {
 // ==========================
 // Server Start
 // ==========================
-// In server.js, ensure your port is configured to use environment variables:
 const port = process.env.PORT || 5001;
 server.listen(port, () => console.log(`Server listening on 127.0.0.1:${port}`));
