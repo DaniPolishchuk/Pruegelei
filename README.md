@@ -39,6 +39,18 @@ Just connect it to your device and use the following controls:
 1. Make sure you have **Node.js** installed (version 23.11.0 was used during development).
 2. In the project folder, run:
 
+## Getting Started using Docker (make sure you have Docker installed)
+
+1. **docker pull pilander/pruegelei:latest**
+2. **docker run -d --name pruegelei_app -p 3000:5001 pruegelei**
+3. **docker stop pruegelei_app**
+
+## Updating the Docker Container
+
+1. Build the image locally **docker build -t pilander/pruegelei:latest .**
+2. Log in to Docker Hub (one-time) **docker login**
+3. Push to the registry **docker push pilander/pruegelei:latest**
+
 ```bash
 npm install
 npm start

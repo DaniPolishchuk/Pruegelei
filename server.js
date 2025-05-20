@@ -305,7 +305,7 @@ io.on('connection', socket => {
     socket.on('hit', ({roomName, defenderId, damage}) =>
         io.to(roomName).emit('confirmedHit', {defenderId, damage})
     );
-    
+
     socket.on('togglePause', ({ roomName }) => {
         io.to(roomName).emit('gamePaused');
       });
@@ -357,6 +357,6 @@ app.use((req, res, next) => {
 // ==========================
 // Server Start
 // ==========================
-server.listen(5001, () =>
+server.listen(5001, '0.0.0.0', () =>
     console.log('Server listening on 127.0.0.1:5001')
 );
