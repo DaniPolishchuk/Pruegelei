@@ -37,6 +37,7 @@ const reselectResponses = {};
 // ==========================
 app.use(express.static(path.join(__dirname, '.')));
 
+app.get('/favicon.ico', (req, res) => res.status(204).end());
 app.get('/', (_, res) => res.sendFile(path.join(__dirname, 'StartMenu', 'startMenu.html')));
 app.get(['/fighterSelection', '/fighterSelectionL'], (_, res) =>
     res.sendFile(path.join(__dirname, 'FighterSelection', 'fighterSelection.html'))
