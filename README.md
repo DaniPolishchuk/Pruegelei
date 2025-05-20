@@ -72,9 +72,16 @@ docker run -d --platform linux/amd64 --name pruegelei_app -p 5001:5001 pilander/
 
 ## Updating the Docker Container
 
-1. Build the image locally **docker build -t pilander/pruegelei:latest .**
-2. Log in to Docker Hub (one-time) **docker login**
-3. Push to the registry **docker push pilander/pruegelei:latest**
+```bash
+# Build the image locally
+docker build -t pilander/pruegelei:latest .**
+# Log in to Docker Hub (one-time)
+docker login
+# Push to the registry
+docker push pilander/pruegelei:latest**
+```
+
+## Start the server just using Node.js
 
 ```bash
 npm install
