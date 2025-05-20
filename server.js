@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 import path from "path";
 import Database from "better-sqlite3";
 import { fileURLToPath } from "url";
+import process from "node:process";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -380,4 +381,6 @@ app.use((req, res) => {
 // ==========================
 // Server Start
 // ==========================
-server.listen(5001, () => console.log("Server listening on 127.0.0.1:5001"));
+// In server.js, ensure your port is configured to use environment variables:
+const port = process.env.PORT || 5001;
+server.listen(port, () => console.log(`Server listening on 127.0.0.1:${port}`));
