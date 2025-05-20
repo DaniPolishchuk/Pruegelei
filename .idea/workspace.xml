@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="baea4f44-bfc3-4a20-9658-b38e43f94d0e" name="Changes" comment="" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="HTML File" />
+        <option value="CSS File" />
+        <option value="JavaScript File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
+  <component name="ProjectId" id="2scccmS0Eyc5xzyK5jMkxEpS5EB" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DefaultHtmlFileTemplate": "HTML File",
+    "Node.js.classes.js.executor": "Debug",
+    "Node.js.index.js.executor": "Debug",
+    "Node.js.server.js.executor": "Debug",
+    "Node.js.utils.js.executor": "Debug",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "SHELLCHECK.PATH": "/Users/I573830/Library/Application Support/JetBrains/WebStorm2025.1/plugins/Shell Script/shellcheck",
+    "git-widget-placeholder": "main",
+    "javascript.nodejs.core.library.configured.version": "23.7.0",
+    "javascript.nodejs.core.library.typings.version": "22.15.18",
+    "last_opened_file_path": "/Users/I573830/WebProgrammieren/GitHubPrivat/Pruegelei",
+    "list.type.of.created.stylesheet": "CSS",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.standard": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.standard": "",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "npm.start.executor": "Run",
+    "settings.editor.selected.configurable": "settings.javascript.linters.eslint",
+    "ts.external.directory.path": "/Applications/WebStorm.app/Contents/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true"
+  },
+  "keyToStringList": {
+    "DatabaseDriversLRU": [
+      "sqlite"
+    ]
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/LocalGameMode" />
+      <recent name="$PROJECT_DIR$/StartMenu" />
+      <recent name="$PROJECT_DIR$" />
+      <recent name="$PROJECT_DIR$/localGameMode/BackgroundSelection" />
+      <recent name="$PROJECT_DIR$/localGameMode/FighterSelection" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="start" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="start" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="npm.start" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-js-predefined-d6986cc7102b-6a121458b545-JavaScript-WS-251.25410.117" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="baea4f44-bfc3-4a20-9658-b38e43f94d0e" name="Changes" comment="" />
+      <created>1738758384099</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1738758384099</updated>
+      <workItem from="1738758385117" duration="666000" />
+      <workItem from="1738765273533" duration="48765000" />
+      <workItem from="1739020456311" duration="1844000" />
+      <workItem from="1739024153464" duration="572000" />
+      <workItem from="1739029345508" duration="70743000" />
+      <workItem from="1739275750241" duration="120000" />
+      <workItem from="1739279171281" duration="23279000" />
+      <workItem from="1739436011360" duration="20631000" />
+      <workItem from="1740049479046" duration="28000" />
+      <workItem from="1740049511412" duration="51421000" />
+      <workItem from="1741713944147" duration="13423000" />
+      <workItem from="1741957315296" duration="1919000" />
+      <workItem from="1742062796355" duration="585000" />
+      <workItem from="1743439937653" duration="11765000" />
+      <workItem from="1744109693367" duration="43283000" />
+      <workItem from="1745264202518" duration="6108000" />
+      <workItem from="1746431571063" duration="72094000" />
+      <workItem from="1747048011796" duration="49823000" />
+      <workItem from="1747501113850" duration="614000" />
+      <workItem from="1747564450717" duration="37984000" />
+      <workItem from="1747678803947" duration="8482000" />
+      <workItem from="1747731084040" duration="361000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
