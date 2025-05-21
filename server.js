@@ -72,6 +72,10 @@ app.get("/fighters", (_, res) => {
     if (fighter.Attack4) fighter.Attack4 = bufferToBase64(fighter.Attack4);
     if (fighter.TakeHit) fighter.TakeHit = bufferToBase64(fighter.TakeHit);
     if (fighter.Death) fighter.Death = bufferToBase64(fighter.Death);
+    if (fighter.Block) {
+      fighter.Block = bufferToBase64(fighter.Block);
+    } else {
+    }
 
     if (!fighter.Attack2) {
       fighter.Attack2 = fighter.Attack1;

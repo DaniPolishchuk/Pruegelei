@@ -249,6 +249,7 @@ export async function setFighterData(player, flip, fighterName) {
       },
       takeHit: { srcKey: "TakeHit", framesKey: "TakeHitFrames" },
       death: { srcKey: "Death", framesKey: "DeathFrames" },
+      block: { srcKey: "Block", framesKey: "BlockFrames" },
     };
 
     player.sprites = {};
@@ -264,8 +265,10 @@ export async function setFighterData(player, flip, fighterName) {
 
     for (const spriteKey in player.sprites) {
       const sprite = player.sprites[spriteKey];
-      sprite.image = new Image();
-      sprite.image.src = sprite.imageSrc;
+      if (sprite.imageSrc) {
+        sprite.image = new Image();
+        sprite.image.src = sprite.imageSrc;
+      }
     }
   } catch (error) {
     console.error("Error fetching fighter data:", error);

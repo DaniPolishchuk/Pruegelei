@@ -46,29 +46,31 @@ socket.emit("joinRoom", { roomName: room, clientId });
 
 let rematchRequested = false;
 socket.on("showRematchModal", () => {
-  yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
+  setTimeout(function () {
+    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
 
-  header.textContent = "Rematch?";
+    header.textContent = "Rematch?";
 
-  yesBtn.onclick = () => {
-    socket.emit("rematchResponse", { roomName: room, decision: true });
-    header.textContent = "Waiting…";
-    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
-  };
+    yesBtn.onclick = () => {
+      socket.emit("rematchResponse", { roomName: room, decision: true });
+      header.textContent = "Waiting…";
+      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+    };
 
-  reselectBtn.onclick = () => {
-    socket.emit("reselectResponse", { roomName: room });
-    header.textContent = "Waiting for reselect vote…";
-    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
-  };
+    reselectBtn.onclick = () => {
+      socket.emit("reselectResponse", { roomName: room });
+      header.textContent = "Waiting for reselect vote…";
+      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+    };
 
-  noBtn.onclick = () => {
-    socket.emit("rematchResponse", { roomName: room, decision: false });
-    header.textContent = "Leaving…";
-    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
-  };
+    noBtn.onclick = () => {
+      socket.emit("rematchResponse", { roomName: room, decision: false });
+      header.textContent = "Leaving…";
+      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+    };
 
-  modal.style.display = "flex";
+    modal.style.display = "flex";
+  }, 3000);
 });
 
 socket.on("rematchStart", () => {

@@ -55,23 +55,25 @@ let isPaused = false;
 // Rematch Modal (local)
 // ==========================
 function showRematchModal() {
-  yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
-  header.textContent = "Rematch?";
+  setTimeout(function () {
+    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
+    header.textContent = "Rematch?";
 
-  yesBtn.onclick = () => {
-    header.textContent = "Reloading…";
-    window.location.reload();
-  };
-  reselectBtn.onclick = () => {
-    header.textContent = "Reselecting…";
-    window.history.go(-2);
-  };
-  noBtn.onclick = () => {
-    header.textContent = "Leaving…";
-    window.location.href = "/";
-  };
+    yesBtn.onclick = () => {
+      header.textContent = "Reloading…";
+      window.location.reload();
+    };
+    reselectBtn.onclick = () => {
+      header.textContent = "Reselecting…";
+      window.history.go(-2);
+    };
+    noBtn.onclick = () => {
+      header.textContent = "Leaving…";
+      window.location.href = "/";
+    };
 
-  modal.style.display = "flex";
+    modal.style.display = "flex";
+  }, 3000);
 }
 
 // ==========================

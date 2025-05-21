@@ -43,10 +43,6 @@ export class Sprite {
 // Fighter class: full player logic and animation
 // ==========================
 export class Fighter {
-  baseAttackBoxOffset;
-  offset;
-  sprites;
-
   constructor({ position, velocity, canvas }) {
     this.position = position;
     this.currentSpriteName = "idle";
@@ -204,18 +200,19 @@ export class Fighter {
     this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
 
     if (this.isBlocking) {
-      this.image = this.sprites.idle.image;
-      this.framesMax = this.sprites.idle.framesMax;
-
-      let playerMiddle = (this.position.x + this.position.x + this.width) / 2;
-      this.shield.position = {
-        x: this.flip
-          ? playerMiddle - this.shield.width / 2 - 30
-          : this.position.x - 50,
-        y: this.position.y,
-      };
-      this.shield.draw(ctxArg);
-      this.switchSprite("idle");
+      if (this.sprites.block.image) {
+        this.switchSprite("block");
+      } else {
+        this.switchSprite("idle");
+        let playerMiddle = this.position.x + this.width / 2;
+        this.shield.position = {
+          x: this.flip
+            ? playerMiddle - this.shield.width / 2 - 30
+            : this.position.x - 50,
+          y: this.position.y,
+        };
+        this.shield.draw(ctxArg);
+      }
       if (this.velocity.y > 0) {
         this.position.y += this.velocity.y;
       }
@@ -285,7 +282,7 @@ export class Fighter {
     }
 
     this.currentSpriteName = sprite;
-    if (!this.isBlocking) {
+    if (!this.isBlocking || sprite === "block") {
       switch (sprite) {
         case "idle":
           if (this.image !== this.sprites.idle.image) {
@@ -346,6 +343,13 @@ export class Fighter {
           if (this.image !== this.sprites.death.image) {
             this.image = this.sprites.death.image;
             this.framesMax = this.sprites.death.framesMax;
+            this.framesCurrent = 0;
+          }
+          break;
+        case "block":
+          if (this.image !== this.sprites.block.image) {
+            this.image = this.sprites.block.image;
+            this.framesMax = this.sprites.block.framesMax;
             this.framesCurrent = 0;
           }
           break;
