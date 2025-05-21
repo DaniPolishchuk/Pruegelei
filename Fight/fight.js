@@ -378,6 +378,7 @@ function animate() {
     rematchRequested = true;
     determineWinner(player1, player2);
     socket.emit("requestRematch", { roomName: room });
+    offscreenCtx.restore();
     return;
   }
 

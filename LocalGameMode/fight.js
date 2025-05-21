@@ -241,6 +241,7 @@ function animate() {
     rematchRequested = true;
     determineWinner(player1, player2);
     showRematchModal();
+    offscreenCtx.restore();
     return;
   }
 
