@@ -203,7 +203,9 @@ export class Fighter {
       if (this.sprites.block.image) {
         this.switchSprite("block");
       } else {
+        this.isBlocking = false;
         this.switchSprite("idle");
+        this.isBlocking = true;
         let playerMiddle = this.position.x + this.width / 2;
         this.shield.position = {
           x: this.flip

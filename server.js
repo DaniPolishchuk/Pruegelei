@@ -385,4 +385,6 @@ app.use((req, res) => {
 // Server Start
 // ==========================
 const port = process.env.PORT || 5001;
-server.listen(port, () => console.log(`Server listening on 127.0.0.1:${port}`));
+server.listen(port, () =>
+  console.log(`Server listening on http://127.0.0.1:${port}`),
+);
