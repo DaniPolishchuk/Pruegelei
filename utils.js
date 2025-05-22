@@ -76,9 +76,15 @@ export function determineWinner(p1, p2) {
   pauseTimer();
   const resEl = document.querySelector("#gameResult");
   resEl.style.display = "flex";
-  if (p1.health > p2.health) resEl.textContent = "Player1 won";
-  else if (p1.health < p2.health) resEl.textContent = "Player2 won";
-  else resEl.textContent = "Tie";
+  if (p1.health > p2.health) {
+    p2.switchSprite("death");
+    p2.dead = true;
+    resEl.textContent = "Player1 won";
+  } else if (p1.health < p2.health) {
+    p1.switchSprite("death");
+    p1.dead = true;
+    resEl.textContent = "Player2 won";
+  } else resEl.textContent = "Tie";
 }
 
 // ==============================
