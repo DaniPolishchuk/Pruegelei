@@ -144,21 +144,24 @@ setUpGame();
 // Collision & Damage Handling
 // ==========================
 function processAttackCollision(attacker, defender, defenderHealthBar) {
-  if (rectangularCollision(attacker, defender)) {
-    if (
-      attacker.isAttacking &&
-      attacker.framesCurrent >= attacker.attackFrames / 2
-    ) {
-      defender.takeHit(attacker.damage);
-      attacker.isAttacking = false;
-      defenderHealthBar.style.width = Math.max(defender.health, 0) + "%";
-    }
-  }
   if (
     attacker.isAttacking &&
-    attacker.framesCurrent >= attacker.attackFrames / 2
+    !attacker.hitLanded &&
+    attacker.framesCurrent >= attacker.attackFrames / 2 &&
+    rectangularCollision(attacker, defender)
+  ) {
+    defender.takeHit(attacker.damage);
+    attacker.hitLanded = true;
+    defenderHealthBar.style.width = Math.max(defender.health, 0) + "%";
+  }
+
+  // Reset attack state when animation completes
+  if (
+    attacker.isAttacking &&
+    attacker.framesCurrent >= attacker.attackFrames - 1
   ) {
     attacker.isAttacking = false;
+    attacker.hitLanded = false;
   }
 }
 
@@ -301,32 +304,40 @@ window.addEventListener("keydown", (event) => {
         }
         break;
       case "1":
-        player1.attackStyle = "style1";
-        player1.attackBox = player1.sprites.attack1.attackBox;
-        player1.attackFrames = player1.sprites.attack1.framesMax;
-        determineDamage(player1);
-        player1.attack();
+        if (!player1.isAttacking) {
+          player1.attackStyle = "style1";
+          player1.attackBox = player1.sprites.attack1.attackBox;
+          player1.attackFrames = player1.sprites.attack1.framesMax;
+          determineDamage(player1);
+          player1.attack();
+        }
         break;
       case "2":
-        player1.attackStyle = "style2";
-        player1.attackBox = player1.sprites.attack2.attackBox;
-        player1.attackFrames = player1.sprites.attack2.framesMax;
-        determineDamage(player1);
-        player1.attack();
+        if (!player1.isAttacking) {
+          player1.attackStyle = "style2";
+          player1.attackBox = player1.sprites.attack2.attackBox;
+          player1.attackFrames = player1.sprites.attack2.framesMax;
+          determineDamage(player1);
+          player1.attack();
+        }
         break;
       case "3":
-        player1.attackStyle = "style3";
-        player1.attackBox = player1.sprites.attack3.attackBox;
-        player1.attackFrames = player1.sprites.attack3.framesMax;
-        determineDamage(player1);
-        player1.attack();
+        if (!player1.isAttacking) {
+          player1.attackStyle = "style3";
+          player1.attackBox = player1.sprites.attack3.attackBox;
+          player1.attackFrames = player1.sprites.attack3.framesMax;
+          determineDamage(player1);
+          player1.attack();
+        }
         break;
       case "4":
-        player1.attackStyle = "style4";
-        player1.attackBox = player1.sprites.attack4.attackBox;
-        player1.attackFrames = player1.sprites.attack4.framesMax;
-        determineDamage(player1);
-        player1.attack();
+        if (!player1.isAttacking) {
+          player1.attackStyle = "style4";
+          player1.attackBox = player1.sprites.attack4.attackBox;
+          player1.attackFrames = player1.sprites.attack4.framesMax;
+          determineDamage(player1);
+          player1.attack();
+        }
         break;
     }
   }
@@ -354,32 +365,40 @@ window.addEventListener("keydown", (event) => {
         }
         break;
       case "0":
-        player2.attackStyle = "style1";
-        player2.attackBox = player2.sprites.attack1.attackBox;
-        player2.attackFrames = player2.sprites.attack1.framesMax;
-        determineDamage(player2);
-        player2.attack();
+        if (!player2.isAttacking) {
+          player2.attackStyle = "style1";
+          player2.attackBox = player2.sprites.attack1.attackBox;
+          player2.attackFrames = player2.sprites.attack1.framesMax;
+          determineDamage(player2);
+          player2.attack();
+        }
         break;
       case "9":
-        player2.attackStyle = "style2";
-        player2.attackBox = player2.sprites.attack2.attackBox;
-        player2.attackFrames = player2.sprites.attack2.framesMax;
-        determineDamage(player2);
-        player2.attack();
+        if (!player2.isAttacking) {
+          player2.attackStyle = "style2";
+          player2.attackBox = player2.sprites.attack2.attackBox;
+          player2.attackFrames = player2.sprites.attack2.framesMax;
+          determineDamage(player2);
+          player2.attack();
+        }
         break;
       case "8":
-        player2.attackStyle = "style3";
-        player2.attackBox = player2.sprites.attack3.attackBox;
-        player2.attackFrames = player2.sprites.attack3.framesMax;
-        determineDamage(player2);
-        player2.attack();
+        if (!player2.isAttacking) {
+          player2.attackStyle = "style3";
+          player2.attackBox = player2.sprites.attack3.attackBox;
+          player2.attackFrames = player2.sprites.attack3.framesMax;
+          determineDamage(player2);
+          player2.attack();
+        }
         break;
       case "7":
-        player2.attackStyle = "style4";
-        player2.attackBox = player2.sprites.attack4.attackBox;
-        player2.attackFrames = player2.sprites.attack4.framesMax;
-        determineDamage(player2);
-        player2.attack();
+        if (!player2.isAttacking) {
+          player2.attackStyle = "style4";
+          player2.attackBox = player2.sprites.attack4.attackBox;
+          player2.attackFrames = player2.sprites.attack4.framesMax;
+          determineDamage(player2);
+          player2.attack();
+        }
         break;
     }
   }

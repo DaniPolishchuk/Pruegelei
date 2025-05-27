@@ -553,14 +553,44 @@ async function getAvgAttackSurface() {
   return count ? totalSurface / count : 0;
 }
 
+async function getAvgAttackFramesCount() {
+  const fighters = await getFighters();
+  let totalFrames = 0,
+    count = 0;
+
+  fighters.forEach((f) => {
+    totalFrames += f.Attack1Frames;
+    count++;
+    if (f.Attack2 && f.Attack2 !== f.Attack1) {
+      totalFrames += f.Attack2Frames;
+      count++;
+    }
+    if (f.Attack3 && f.Attack3 !== f.Attack2) {
+      totalFrames += f.Attack3Frames;
+      count++;
+    }
+    if (f.Attack4 && f.Attack4 !== f.Attack3) {
+      totalFrames += f.Attack4Frames;
+      count++;
+    }
+  });
+
+  return count ? totalFrames / count : 0;
+}
+
 export async function determineDamage(player) {
-  const avg = await getAvgAttackSurface();
-  if (!avg) {
+  const avgSurface = await getAvgAttackSurface();
+  const avgFramesCount = await getAvgAttackFramesCount();
+  if (!avgSurface || !avgFramesCount) {
     player.damage = 0;
     return;
   }
   const surface = player.attackBox.width * Math.abs(player.attackBox.height);
-  player.damage = 5 / (surface / avg);
+  const framesCount = player.framesMax;
+  const calculatedDamage =
+    5 / (surface / avgSurface) / (avgFramesCount / framesCount);
+  player.damage = calculatedDamage > 10 ? 10 : calculatedDamage;
+  console.log(avgSurface, avgFramesCount, surface, framesCount, player.damage);
 }
 
 // ==============================
