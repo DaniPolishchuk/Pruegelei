@@ -40,6 +40,9 @@ const socket = io();
 const room = sessionStorage.getItem("room");
 const clientId = localStorage.getItem("clientId");
 socket.emit("joinRoom", { roomName: room, clientId });
+socket.emit("startGame", room);
+const overlay = document.getElementById("pauseOverlay");
+let isPaused = false;
 
 let rematchRequested = false;
 socket.on("showRematchModal", () => {
@@ -85,15 +88,22 @@ socket.on("rematchEnd", () => {
 socket.on("timerTick", (remaining) => {
   document.getElementById("timer").textContent = remaining;
 });
-socket.on("timerPaused", (remaining) => {
-  document.getElementById("timer").textContent = remaining;
-});
-socket.on("timerResumed", (remaining) => {
-  document.getElementById("timer").textContent = remaining;
-});
+
 socket.on("timerEnd", () => {
   determineWinner(player1, player2);
   socket.emit("requestRematch", { roomName: room });
+});
+
+socket.on("timerPaused", (remaining) => {
+  isPaused = true;
+  overlay.classList.remove("hidden");
+  document.getElementById("timer").textContent = remaining;
+});
+
+socket.on("timerResumed", (remaining) => {
+  isPaused = false;
+  overlay.classList.add("hidden");
+  document.getElementById("timer").textContent = remaining;
 });
 
 // ==========================
@@ -231,24 +241,6 @@ socket.on("remoteState", (data) => {
       ? document.querySelector("#player2Health")
       : document.querySelector("#player1Health");
   bar.style.width = Math.max(data.health, 0) + "%";
-});
-
-let isPaused = false;
-
-socket.on("gamePaused", () => {
-  isPaused = !isPaused;
-  const overlay = document.getElementById("pauseOverlay");
-
-  if (isPaused) {
-    pauseTimer();
-    overlay.classList.remove("hidden");
-  } else {
-    resumeTimer(
-      (v) => (document.getElementById("timer").textContent = v),
-      () => determineWinner(player1, player2),
-    );
-    overlay.classList.add("hidden");
-  }
 });
 
 // ==========================

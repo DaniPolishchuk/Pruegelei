@@ -303,30 +303,31 @@ io.on("connection", (socket) => {
   socket.on("startGame", (room) => {
     if (!lastBackground[room]) {
       const rows = db.prepare("SELECT Name FROM Backgrounds").all();
-      lastBackground[room] = rows[Math.floor(Math.random() * rows.length)].Name;
-      io.in(room).emit("gameStart", { background: lastBackground[room] });
-      if (roomTimers[room]?.intervalId) {
-        clearInterval(roomTimers[room].intervalId);
-      }
-      roomTimers[room] = {
-        remaining: DEFAULT_ROUND_TIME,
-        paused: false,
-        intervalId: null,
-      };
-      io.in(room).emit("timerTick", roomTimers[room].remaining);
-      roomTimers[room].intervalId = setInterval(() => {
-        const t = roomTimers[room];
-        if (t.paused) return;
-          t.remaining--;
-          io.in(room).emit("timerTick", t.remaining);
+      lastBackground[room] =
+      rows[Math.floor(Math.random() * rows.length)].Name;
+    }
+    io.in(room).emit("gameStart", { background: lastBackground[room] });
+
+    if (roomTimers[room]?.intervalId) {
+      clearInterval(roomTimers[room].intervalId);
+    }
+    roomTimers[room] = {
+      remaining: DEFAULT_ROUND_TIME,
+      paused: false,
+      intervalId: null,
+    };
+    io.in(room).emit("timerTick", roomTimers[room].remaining);
+    roomTimers[room].intervalId = setInterval(() => {
+      const t = roomTimers[room];
+      if (!t.paused) {
+        t.remaining--;
+        io.in(room).emit("timerTick", t.remaining);
         if (t.remaining <= 0) {
           clearInterval(t.intervalId);
           io.in(room).emit("timerEnd");
         }
-      }, 1000);
-    } else {
-      socket.emit("gameStart", { background: lastBackground[room] });
-    }
+      }
+    }, 1000);
   });
 
   socket.on("disconnect", () => {
