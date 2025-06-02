@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 // ==========================
 // Imports & Setup
 // ==========================
@@ -33,6 +34,10 @@ function getLobbyList() {
 
 const rematchResponses = {};
 const reselectResponses = {};
+
+const roomTimers = {};
+const DEFAULT_ROUND_TIME = 100;
+
 // ==========================
 // Static Routes
 // ==========================
@@ -298,11 +303,31 @@ io.on("connection", (socket) => {
   socket.on("startGame", (room) => {
     if (!lastBackground[room]) {
       const rows = db.prepare("SELECT Name FROM Backgrounds").all();
-      lastBackground[room] = rows[Math.floor(Math.random() * rows.length)].Name;
-      io.in(room).emit("gameStart", { background: lastBackground[room] });
-    } else {
-      socket.emit("gameStart", { background: lastBackground[room] });
+      lastBackground[room] =
+      rows[Math.floor(Math.random() * rows.length)].Name;
     }
+    io.in(room).emit("gameStart", { background: lastBackground[room] });
+
+    if (roomTimers[room]?.intervalId) {
+      clearInterval(roomTimers[room].intervalId);
+    }
+    roomTimers[room] = {
+      remaining: DEFAULT_ROUND_TIME,
+      paused: false,
+      intervalId: null,
+    };
+    io.in(room).emit("timerTick", roomTimers[room].remaining);
+    roomTimers[room].intervalId = setInterval(() => {
+      const t = roomTimers[room];
+      if (!t.paused) {
+        t.remaining--;
+        io.in(room).emit("timerTick", t.remaining);
+        if (t.remaining <= 0) {
+          clearInterval(t.intervalId);
+          io.in(room).emit("timerEnd");
+        }
+      }
+    }, 1000);
   });
 
   socket.on("disconnect", () => {
@@ -334,7 +359,10 @@ io.on("connection", (socket) => {
   );
 
   socket.on("togglePause", ({ roomName }) => {
-    io.to(roomName).emit("gamePaused");
+    const t = roomTimers[roomName];
+    if (!t) return;
+    t.paused = !t.paused;
+    io.in(roomName).emit(t.paused ? "timerPaused" : "timerResumed", t.remaining);
   });
 
   socket.on("requestRematch", ({ roomName }) => {
