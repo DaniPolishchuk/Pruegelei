@@ -90,38 +90,38 @@ export function determineWinner(p1, p2) {
 // ==============================
 // Timer Logic
 // ==============================
-let _timerId = null;
-let _remaining = 0;
+let timerId = null;
+let remaining = 0;
 
 export function startTimer(initialSeconds, onTick, onEnd) {
-  _remaining = initialSeconds;
-  onTick(_remaining);
+  remaining = initialSeconds;
+  onTick(remaining);
 
-  _timerId = setInterval(() => {
-    _remaining--;
-    onTick(_remaining);
-    if (_remaining <= 0) {
-      clearInterval(_timerId);
+  timerId = setInterval(() => {
+    remaining--;
+    onTick(remaining);
+    if (remaining <= 0) {
+      clearInterval(timerId);
       onEnd();
     }
   }, 1000);
 }
 
 export function pauseTimer() {
-  if (_timerId) {
-    clearInterval(_timerId);
-    _timerId = null;
+  if (timerId) {
+    clearInterval(timerId);
+    timerId = null;
   }
 }
 
 export function resumeTimer(onTick, onEnd) {
-  if (_timerId) return; // already running
-  onTick(_remaining);
-  _timerId = setInterval(() => {
-    _remaining--;
-    onTick(_remaining);
-    if (_remaining <= 0) {
-      clearInterval(_timerId);
+  if (timerId) return; // already running
+  onTick(remaining);
+  timerId = setInterval(() => {
+    remaining--;
+    onTick(remaining);
+    if (remaining <= 0) {
+      clearInterval(timerId);
       onEnd();
     }
   }, 1000);
@@ -182,26 +182,26 @@ async function getSongs() {
 export async function setFighterData(player, flip, fighterName) {
   try {
     const fighters = await getFighters();
-    const fighter = fighters.find((f) => f.Name === fighterName);
+    const fighter = fighters.find((f) => f.name === fighterName);
     if (!fighter) {
       console.error(`Fighter "${fighterName}" not found.`);
       return;
     }
 
-    player.scale = fighter.Scale;
-    player.image.src = fighter.Idle;
-    player.framesMax = fighter.IdleFrames;
-    player.offset = { x: fighter.OffsetX, y: fighter.OffsetY };
+    player.scale = fighter.scale;
+    player.image.src = fighter.idle;
+    player.framesMax = fighter.idleFrames;
+    player.offset = { x: fighter.offsetX, y: fighter.offsetY };
     player.flip = flip;
-    player.gender = fighter.Gender;
+    player.gender = fighter.gender;
 
     const baseAttackBoxOffset = {
-      x: fighter.AttackBoxOffsetX,
-      y: fighter.AttackBoxOffsetY,
+      x: fighter.attackBoxOffsetX,
+      y: fighter.attackBoxOffsetY,
     };
     player.baseAttackBoxOffset = baseAttackBoxOffset;
 
-    const attackBoxWidth = fighter.Attack1Width;
+    const attackBoxWidth = fighter.attack1Width;
     const attackBoxOffsetX = flip
       ? baseAttackBoxOffset.x - attackBoxWidth
       : baseAttackBoxOffset.x;
@@ -210,9 +210,9 @@ export async function setFighterData(player, flip, fighterName) {
       position: { x: player.position.x, y: player.position.y },
       offset: { x: attackBoxOffsetX, y: baseAttackBoxOffset.y },
       width: attackBoxWidth,
-      height: fighter.Attack1Height,
+      height: fighter.attack1Height,
     };
-    player.attackFrames = fighter.Attack1Frames;
+    player.attackFrames = fighter.attack1Frames;
 
     const createAttackBox = (attackKey) => {
       const width = fighter[attackKey + "Width"];
@@ -229,33 +229,33 @@ export async function setFighterData(player, flip, fighterName) {
     };
 
     const spriteMapping = {
-      idle: { srcKey: "Idle", framesKey: "IdleFrames" },
-      run: { srcKey: "Run", framesKey: "RunFrames" },
-      jump: { srcKey: "Jump", framesKey: "JumpFrames" },
-      fall: { srcKey: "Fall", framesKey: "FallFrames" },
+      idle: { srcKey: "idle", framesKey: "idleFrames" },
+      run: { srcKey: "run", framesKey: "runFrames" },
+      jump: { srcKey: "jump", framesKey: "jumpFrames" },
+      fall: { srcKey: "fall", framesKey: "fallFrames" },
       attack1: {
-        srcKey: "Attack1",
-        framesKey: "Attack1Frames",
+        srcKey: "attack1",
+        framesKey: "attack1Frames",
         hasAttackBox: true,
       },
       attack2: {
-        srcKey: "Attack2",
-        framesKey: "Attack2Frames",
+        srcKey: "attack2",
+        framesKey: "attack2Frames",
         hasAttackBox: true,
       },
       attack3: {
-        srcKey: "Attack3",
-        framesKey: "Attack3Frames",
+        srcKey: "attack3",
+        framesKey: "attack3Frames",
         hasAttackBox: true,
       },
       attack4: {
-        srcKey: "Attack4",
-        framesKey: "Attack4Frames",
+        srcKey: "attack4",
+        framesKey: "attack4Frames",
         hasAttackBox: true,
       },
-      takeHit: { srcKey: "TakeHit", framesKey: "TakeHitFrames" },
-      death: { srcKey: "Death", framesKey: "DeathFrames" },
-      block: { srcKey: "Block", framesKey: "BlockFrames" },
+      takeHit: { srcKey: "takeHit", framesKey: "takeHitFrames" },
+      death: { srcKey: "death", framesKey: "deathFrames" },
+      block: { srcKey: "block", framesKey: "blockFrames" },
     };
 
     player.sprites = {};
@@ -286,23 +286,23 @@ export async function setFighters(player1, player2) {
   const fighterName2 = sessionStorage.getItem("player2");
 
   getFighters().then((fighters) => {
-    const f1 = fighters.find((f) => f.Name === fighterName1);
-    player1.setImage(f1.Idle);
-    player1.scale = f1.BackgroundSelectionScale;
-    player1.framesMax = f1.IdleFrames;
+    const f1 = fighters.find((f) => f.name === fighterName1);
+    player1.setImage(f1.idle);
+    player1.scale = f1.backgroundSelectionScale;
+    player1.framesMax = f1.idleFrames;
     player1.offset = {
-      x: f1.BackgroundSelectionOffsetX,
-      y: f1.BackgroundSelectionOffsetY,
+      x: f1.backgroundSelectionOffsetX,
+      y: f1.backgroundSelectionOffsetY,
     };
     player1.framesHold = 8;
 
-    const f2 = fighters.find((f) => f.Name === fighterName2);
-    player2.setImage(f2.Idle);
-    player2.scale = f2.BackgroundSelectionScale;
-    player2.framesMax = f2.IdleFrames;
+    const f2 = fighters.find((f) => f.name === fighterName2);
+    player2.setImage(f2.idle);
+    player2.scale = f2.backgroundSelectionScale;
+    player2.framesMax = f2.idleFrames;
     player2.offset = {
-      x: f2.BackgroundSelectionOffsetX,
-      y: f2.BackgroundSelectionOffsetY,
+      x: f2.backgroundSelectionOffsetX,
+      y: f2.backgroundSelectionOffsetY,
     };
     player2.framesHold = 8;
   });
@@ -310,11 +310,11 @@ export async function setFighters(player1, player2) {
 
 export async function setBackground(bgName) {
   const backgrounds = await getBackgrounds();
-  const bg = backgrounds.find((f) => f.Name === bgName);
+  const bg = backgrounds.find((f) => f.name === bgName);
   return {
-    imageSrc: bg.BackgroundImage,
-    groundLevel: 720 / bg.GroundLevel,
-    borderBackground: bg.BorderBackground,
+    imageSrc: bg.backgroundImage,
+    groundLevel: 720 / bg.groundLevel,
+    borderBackground: bg.borderBackground,
   };
 }
 
@@ -323,9 +323,9 @@ export async function setBackgrounds(bgs) {
     const backgrounds = await getBackgrounds();
     backgrounds.forEach((bg) => {
       const img = document.createElement("img");
-      img.src = bg.BackgroundImage;
+      img.src = bg.backgroundImage;
       img.className = "backgroundImage";
-      img.alt = bg.Name;
+      img.alt = bg.name;
       bgs.appendChild(img);
     });
   } catch (err) {
@@ -341,8 +341,8 @@ export async function setSong(audioElement, currentSong = null) {
       // Select a random song if none is saved
       const songs = await getSongs();
       const randomSong = songs[Math.floor(Math.random() * songs.length)];
-      audioElement.src = `/music/${randomSong.Name}/source`;
-      sessionStorage.setItem("song", randomSong.Name);
+      audioElement.src = `/music/${randomSong.name}/source`;
+      sessionStorage.setItem("song", randomSong.name);
     }
 
     audioElement.volume = 0.25;
@@ -379,9 +379,9 @@ export async function setSong(audioElement, currentSong = null) {
       const songs = await getSongs();
       const currentSong = sessionStorage.getItem("song"); // Get the current song
       const nextSong =
-        songs.find((song) => song.Name !== currentSong) || songs[0]; // Pick the next song
-      sessionStorage.setItem("song", nextSong.Name); // Save the next song
-      await setSong(audioElement, nextSong.Name); // Play the next song
+        songs.find((song) => song.name !== currentSong) || songs[0]; // Pick the next song
+      sessionStorage.setItem("song", nextSong.name); // Save the next song
+      await setSong(audioElement, nextSong.name); // Play the next song
     });
   } catch (error) {
     console.error("Error in setSong:", error);
@@ -541,13 +541,13 @@ async function getAvgAttackSurface() {
   }
 
   fighters.forEach((f) => {
-    add(f.Attack1Height, f.Attack1Width);
-    if (f.Attack2 && f.Attack2 !== f.Attack1)
-      add(f.Attack2Height, f.Attack2Width);
-    if (f.Attack3 && f.Attack3 !== f.Attack2)
-      add(f.Attack3Height, f.Attack3Width);
-    if (f.Attack4 && f.Attack4 !== f.Attack3)
-      add(f.Attack4Height, f.Attack4Width);
+    add(f.attack1Height, f.attack1Width);
+    if (f.attack2 && f.attack2 !== f.attack1)
+      add(f.attack2Height, f.attack2Width);
+    if (f.attack3 && f.attack3 !== f.attack2)
+      add(f.attack3Height, f.attack3Width);
+    if (f.attack4 && f.attack4 !== f.attack3)
+      add(f.attack4Height, f.attack4Width);
   });
 
   return count ? totalSurface / count : 0;
@@ -559,18 +559,18 @@ async function getAvgAttackFramesCount() {
     count = 0;
 
   fighters.forEach((f) => {
-    totalFrames += f.Attack1Frames;
+    totalFrames += f.attack1Frames;
     count++;
-    if (f.Attack2 && f.Attack2 !== f.Attack1) {
-      totalFrames += f.Attack2Frames;
+    if (f.attack2 && f.attack2 !== f.attack1) {
+      totalFrames += f.attack2Frames;
       count++;
     }
-    if (f.Attack3 && f.Attack3 !== f.Attack2) {
-      totalFrames += f.Attack3Frames;
+    if (f.attack3 && f.attack3 !== f.attack2) {
+      totalFrames += f.attack3Frames;
       count++;
     }
-    if (f.Attack4 && f.Attack4 !== f.Attack3) {
-      totalFrames += f.Attack4Frames;
+    if (f.attack4 && f.attack4 !== f.attack3) {
+      totalFrames += f.attack4Frames;
       count++;
     }
   });
@@ -590,7 +590,6 @@ export async function determineDamage(player) {
   const calculatedDamage =
     5 / (surface / avgSurface) / (avgFramesCount / framesCount);
   player.damage = calculatedDamage > 10 ? 10 : calculatedDamage;
-  console.log(avgSurface, avgFramesCount, surface, framesCount, player.damage);
 }
 
 // ==============================

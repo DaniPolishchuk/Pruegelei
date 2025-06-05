@@ -69,11 +69,11 @@ export class Fighter {
       height: this.height,
     };
     this.shield = null;
-    this._loadShield();
+    this.loadShield();
   }
 
-  async _loadShield() {
-    const { Image: shieldUrl } = await getShield();
+  async loadShield() {
+    const { image: shieldUrl } = await getShield();
     this.shield = new Sprite({
       position: { x: this.position.x, y: this.position.y },
       imageSrc: shieldUrl,
@@ -142,32 +142,44 @@ export class Fighter {
   }
 
   update(ctxArg, groundLvl, gravity) {
+    // Draw the current frame of the fighter
     this.draw(ctxArg);
 
+    // Increment the frame counter for sprite animation
     this.framesElapsed++;
 
+    // Apply gravity and handle ground collision
     if (this.position.y + this.height + this.velocity.y > groundLvl) {
+      // If on or below ground level, stop vertical movement
       this.velocity.y = 0;
       this.position.y += this.velocity.y;
     } else {
+      // If in the air, apply gravity and update vertical position
       this.velocity.y += gravity;
       this.position.y += this.velocity.y;
     }
+
+    // If the fighter is not dead, update horizontal position
     if (!this.dead) this.position.x += this.velocity.x;
 
+    // Handle "death" animation
     if (this.currentSpriteName === "death") {
       if (this.framesElapsed % this.framesHold === 0) {
+        // Advance frame until animation ends
         if (this.framesCurrent < this.framesMax - 1) {
           this.framesCurrent++;
         } else {
+          // Mark as dead once final frame is reached
           this.dead = true;
         }
       }
       return;
     }
 
+    // Handle "takeHit" animation
     if (this.currentSpriteName === "takeHit") {
       if (this.framesElapsed % this.framesHold === 0) {
+        // Advance frame or switch back to idle after hit animation
         if (this.framesCurrent < this.framesMax - 1) {
           this.framesCurrent++;
         } else {
@@ -177,17 +189,22 @@ export class Fighter {
       return;
     }
 
+    // Advance sprite animation for regular actions (e.g. idle, run)
     if (this.framesElapsed % this.framesHold === 0) {
       if (this.framesCurrent < this.framesMax - 1) {
         this.framesCurrent++;
       } else {
+        // Loop animation or stop attack animation
         this.framesCurrent = 0;
         if (this.isAttacking) this.isAttacking = false;
       }
     }
 
+    // Sync hitbox position with fighter's current position
     this.hitbox.position.x = this.position.x;
     this.hitbox.position.y = this.position.y;
+
+    // Update attack box position depending on whether fighter is flipped
     if (!this.flip) {
       this.attackBox.position.x = this.position.x + this.baseAttackBoxOffset.x;
     } else {
@@ -199,13 +216,16 @@ export class Fighter {
     }
     this.attackBox.position.y = this.position.y + this.baseAttackBoxOffset.y;
 
+    // If blocking, show shield and lock to position
     if (this.isBlocking) {
       if (this.sprites.block.image) {
         this.switchSprite("block");
       } else {
+        // If no blocking sprite, simulate shield manually
         this.isBlocking = false;
         this.switchSprite("idle");
         this.isBlocking = true;
+
         let playerMiddle = this.position.x + this.width / 2;
         this.shield.position = {
           x: this.flip
@@ -213,8 +233,12 @@ export class Fighter {
             : this.position.x - 50,
           y: this.position.y,
         };
+
+        // Draw shield sprite
         this.shield.draw(ctxArg);
       }
+
+      // Ensure vertical movement continues during block
       if (this.velocity.y > 0) {
         this.position.y += this.velocity.y;
       }

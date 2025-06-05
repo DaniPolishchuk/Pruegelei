@@ -57,12 +57,12 @@ async function fillDivWithFighters() {
       allFighters.push(
         new MiniFighter(
           newCanvas,
-          fighter.Idle,
-          fighter.SelectionMenuScale,
-          fighter.IdleFrames,
+          fighter.idle,
+          fighter.selectionMenuScale,
+          fighter.idleFrames,
           {
-            x: fighter.SelectionMenuOffsetX,
-            y: fighter.SelectionMenuOffsetY,
+            x: fighter.selectionMenuOffsetX,
+            y: fighter.selectionMenuOffsetY,
           },
         ),
       );
@@ -83,25 +83,25 @@ function selectFighter(fighter) {
 }
 
 function setFighterData(player, fighter) {
-  player.setImage(fighter.Idle);
-  player.scale = fighter.SelectedScale;
-  player.framesMax = fighter.IdleFrames;
+  player.setImage(fighter.idle);
+  player.scale = fighter.selectedScale;
+  player.framesMax = fighter.idleFrames;
   player.offset = {
-    x: fighter.SelectedOffsetX,
-    y: fighter.SelectedOffsetY,
+    x: fighter.selectedOffsetX,
+    y: fighter.selectedOffsetY,
   };
   player.framesCurrent = 0;
-  player.name = fighter.Name;
+  player.name = fighter.name;
 }
 
 // ==========================
 // Animation loop
 // ==========================
 function animate() {
-  window.requestAnimationFrame(animate);
   player1.update();
   player2.update();
   allFighters.forEach((f) => f.update());
+  requestAnimationFrame(animate);
 }
 
 // ==========================
