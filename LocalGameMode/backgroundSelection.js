@@ -17,7 +17,7 @@ import { MiniFighter } from "../classes.js";
 // ==========================
 // Video Setup
 // ==========================
-videoSource.src = "/defaultBorderBackground/video";
+videoSource.src = "/Assets/Backgrounds/Default/video.bin";
 videoElement.load();
 
 // ==========================

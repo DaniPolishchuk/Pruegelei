@@ -26,7 +26,7 @@ const myId = Number(sessionStorage.getItem("playerId"));
 // ==========================
 // Background Video
 // ==========================
-videoSource.src = "/defaultBorderBackground/video";
+videoSource.src = "/Assets/Backgrounds/Default/video.bin";
 videoElement.load();
 
 // ==========================

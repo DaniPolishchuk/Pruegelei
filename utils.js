@@ -153,17 +153,6 @@ async function getBackgrounds() {
   }
 }
 
-export async function getShield() {
-  try {
-    const response = await fetch("/shield");
-    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching shield image:", error);
-    return [];
-  }
-}
-
 async function getSongs() {
   try {
     const response = await fetch("/music");
@@ -188,35 +177,25 @@ export async function setFighterData(player, flip, fighterName) {
       return;
     }
 
+    // Basic player config
     player.scale = fighter.scale;
-    player.image.src = fighter.idle;
+    player.image = new Image();
+    player.image.src = `/Assets/Fighters/${fighterName}/idle.png`;
     player.framesMax = fighter.idleFrames;
     player.offset = { x: fighter.offsetX, y: fighter.offsetY };
     player.flip = flip;
     player.gender = fighter.gender;
 
+    // Base attack box config
     const baseAttackBoxOffset = {
       x: fighter.attackBoxOffsetX,
       y: fighter.attackBoxOffsetY,
     };
     player.baseAttackBoxOffset = baseAttackBoxOffset;
 
-    const attackBoxWidth = fighter.attack1Width;
-    const attackBoxOffsetX = flip
-      ? baseAttackBoxOffset.x - attackBoxWidth
-      : baseAttackBoxOffset.x;
-
-    player.attackBox = {
-      position: { x: player.position.x, y: player.position.y },
-      offset: { x: attackBoxOffsetX, y: baseAttackBoxOffset.y },
-      width: attackBoxWidth,
-      height: fighter.attack1Height,
-    };
-    player.attackFrames = fighter.attack1Frames;
-
     const createAttackBox = (attackKey) => {
-      const width = fighter[attackKey + "Width"];
-      const height = fighter[attackKey + "Height"];
+      const width = fighter[`${attackKey}Width`];
+      const height = fighter[`${attackKey}Height`];
       const offsetX = flip
         ? player.width - baseAttackBoxOffset.x - width
         : baseAttackBoxOffset.x;
@@ -229,55 +208,93 @@ export async function setFighterData(player, flip, fighterName) {
     };
 
     const spriteMapping = {
-      idle: { srcKey: "idle", framesKey: "idleFrames" },
-      run: { srcKey: "run", framesKey: "runFrames" },
-      jump: { srcKey: "jump", framesKey: "jumpFrames" },
-      fall: { srcKey: "fall", framesKey: "fallFrames" },
-      attack1: {
-        srcKey: "attack1",
-        framesKey: "attack1Frames",
-        hasAttackBox: true,
-      },
+      idle: { framesKey: "idleFrames" },
+      run: { framesKey: "runFrames" },
+      jump: { framesKey: "jumpFrames", fallback: "idle" },
+      fall: { framesKey: "fallFrames", fallback: "idle" },
+      attack1: { framesKey: "attack1Frames", hasAttackBox: true },
       attack2: {
-        srcKey: "attack2",
         framesKey: "attack2Frames",
         hasAttackBox: true,
+        fallback: "attack1",
       },
       attack3: {
-        srcKey: "attack3",
         framesKey: "attack3Frames",
         hasAttackBox: true,
+        fallback: "attack2",
       },
       attack4: {
-        srcKey: "attack4",
         framesKey: "attack4Frames",
         hasAttackBox: true,
+        fallback: "attack3",
       },
-      takeHit: { srcKey: "takeHit", framesKey: "takeHitFrames" },
-      death: { srcKey: "death", framesKey: "deathFrames" },
-      block: { srcKey: "block", framesKey: "blockFrames" },
+      takeHit: { framesKey: "takeHitFrames" },
+      death: { framesKey: "deathFrames" },
+      block: { framesKey: "blockFrames" },
     };
 
+    async function tryLoadImage(path) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = path;
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+      });
+    }
+
     player.sprites = {};
-    for (const [key, mapping] of Object.entries(spriteMapping)) {
-      player.sprites[key] = {
-        imageSrc: fighter[mapping.srcKey],
-        framesMax: fighter[mapping.framesKey],
+    for (let [state, config] of Object.entries(spriteMapping)) {
+      let usedState = state;
+      let imagePath = `/Assets/Fighters/${fighterName}/${state}.png`;
+      let image = await tryLoadImage(imagePath);
+
+      // Fallback check
+      while (!image && config.fallback) {
+        usedState = config.fallback;
+        imagePath = `/Assets/Fighters/${fighterName}/${usedState}.png`;
+        image = await tryLoadImage(imagePath);
+        config = spriteMapping[usedState];
+      }
+
+      // For block, if still no image, explicitly set null
+      if (state === "block" && !image) {
+        player.sprites[state] = {
+          image: null,
+          imageSrc: null,
+          framesMax: 0,
+        };
+        continue;
+      }
+
+      const framesMax = fighter[config.framesKey];
+
+      player.sprites[state] = {
+        image,
+        imageSrc: imagePath,
+        framesMax,
       };
-      if (mapping.hasAttackBox) {
-        player.sprites[key].attackBox = createAttackBox(mapping.srcKey);
+
+      if (config.hasAttackBox) {
+        player.sprites[state].attackBox = createAttackBox(usedState);
       }
     }
 
-    for (const spriteKey in player.sprites) {
-      const sprite = player.sprites[spriteKey];
-      if (sprite.imageSrc) {
-        sprite.image = new Image();
-        sprite.image.src = sprite.imageSrc;
-      }
-    }
+    // Setup attackBox from attack1
+    const attackBoxWidth = fighter.attack1Width;
+    const attackBoxOffsetX = flip
+      ? baseAttackBoxOffset.x - attackBoxWidth
+      : baseAttackBoxOffset.x;
+
+    player.attackBox = {
+      position: { x: player.position.x, y: player.position.y },
+      offset: { x: attackBoxOffsetX, y: baseAttackBoxOffset.y },
+      width: attackBoxWidth,
+      height: fighter.attack1Height,
+    };
+
+    player.attackFrames = fighter.attack1Frames;
   } catch (error) {
-    console.error("Error fetching fighter data:", error);
+    console.error("Error setting fighter data:", error);
   }
 }
 
@@ -287,7 +304,7 @@ export async function setFighters(player1, player2) {
 
   getFighters().then((fighters) => {
     const f1 = fighters.find((f) => f.name === fighterName1);
-    player1.setImage(f1.idle);
+    player1.setImage(`/Assets/Fighters/${f1.name}/idle.png`);
     player1.scale = f1.backgroundSelectionScale;
     player1.framesMax = f1.idleFrames;
     player1.offset = {
@@ -297,7 +314,7 @@ export async function setFighters(player1, player2) {
     player1.framesHold = 8;
 
     const f2 = fighters.find((f) => f.name === fighterName2);
-    player2.setImage(f2.idle);
+    player2.setImage(`/Assets/Fighters/${f2.name}/idle.png`);
     player2.scale = f2.backgroundSelectionScale;
     player2.framesMax = f2.idleFrames;
     player2.offset = {
@@ -312,9 +329,9 @@ export async function setBackground(bgName) {
   const backgrounds = await getBackgrounds();
   const bg = backgrounds.find((f) => f.name === bgName);
   return {
-    imageSrc: bg.backgroundImage,
+    imageSrc: `/Assets/Backgrounds/${bgName}/image.jpeg`,
     groundLevel: 720 / bg.groundLevel,
-    borderBackground: bg.borderBackground,
+    borderBackground: `/Assets/Backgrounds/${bgName}/video.bin`,
   };
 }
 
@@ -323,7 +340,7 @@ export async function setBackgrounds(bgs) {
     const backgrounds = await getBackgrounds();
     backgrounds.forEach((bg) => {
       const img = document.createElement("img");
-      img.src = bg.backgroundImage;
+      img.src = `/Assets/Backgrounds/${bg.name}/image.jpeg`;
       img.className = "backgroundImage";
       img.alt = bg.name;
       bgs.appendChild(img);
@@ -336,12 +353,12 @@ export async function setBackgrounds(bgs) {
 export async function setSong(audioElement, currentSong = null) {
   try {
     if (currentSong) {
-      audioElement.src = `/music/${currentSong}/source`;
+      audioElement.src = `/Assets/Music/${currentSong}.bin`;
     } else {
       // Select a random song if none is saved
       const songs = await getSongs();
       const randomSong = songs[Math.floor(Math.random() * songs.length)];
-      audioElement.src = `/music/${randomSong.name}/source`;
+      audioElement.src = `/Assets/Music/${randomSong.name}.bin`;
       sessionStorage.setItem("song", randomSong.name);
     }
 

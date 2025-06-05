@@ -22,7 +22,7 @@ player2.flipped = true;
 // ==========================
 // Background video setup
 // ==========================
-videoSource.src = "/defaultBorderBackground/video";
+videoSource.src = "/Assets/Backgrounds/Default/video.bin";
 videoElement.load();
 
 // ==========================
@@ -91,7 +91,7 @@ async function fillDivWithFighters() {
       allFighters.push(
         new MiniFighter(
           newCanvas,
-          fighter.idle,
+          `/Assets/Fighters/${fighter.name}/idle.png`,
           fighter.selectionMenuScale,
           fighter.idleFrames,
           {
@@ -116,7 +116,7 @@ async function fillDivWithFighters() {
 
 function setFighter(playerId, fighter) {
   const tgt = playerId === 1 ? player1 : player2;
-  tgt.setImage(fighter.idle);
+  tgt.setImage(`/Assets/Fighters/${fighter.name}/idle.png`);
   tgt.scale = fighter.selectedScale;
   tgt.framesMax = fighter.idleFrames;
   tgt.offset = {

@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 // ==========================
 // Imports & Setup
 // ==========================
@@ -19,9 +18,6 @@ const db = new Database("Fighters.db");
 // ==========================
 // Utility
 // ==========================
-function bufferToBase64(buf) {
-  return `data:image/png;base64,${buf.toString("base64")}`;
-}
 
 const lastBackground = {};
 const rooms = {};
@@ -67,34 +63,17 @@ app.get(["/fight", "/fightL"], (_, res) =>
 app.get("/fighters", (_, res) => {
   const fighters = db.prepare("SELECT * FROM Fighters").all();
   fighters.forEach((fighter) => {
-    if (fighter.idle) fighter.idle = bufferToBase64(fighter.idle);
-    if (fighter.run) fighter.run = bufferToBase64(fighter.run);
-    if (fighter.jump) fighter.jump = bufferToBase64(fighter.jump);
-    if (fighter.fall) fighter.fall = bufferToBase64(fighter.fall);
-    if (fighter.attack1) fighter.attack1 = bufferToBase64(fighter.attack1);
-    if (fighter.attack2) fighter.attack2 = bufferToBase64(fighter.attack2);
-    if (fighter.attack3) fighter.attack3 = bufferToBase64(fighter.attack3);
-    if (fighter.attack4) fighter.attack4 = bufferToBase64(fighter.attack4);
-    if (fighter.takeHit) fighter.takeHit = bufferToBase64(fighter.takeHit);
-    if (fighter.death) fighter.death = bufferToBase64(fighter.death);
-    if (fighter.block) {
-      fighter.block = bufferToBase64(fighter.block);
-    }
-
-    if (!fighter.attack2) {
-      fighter.attack2 = fighter.attack1;
+    if (!fighter.attack2Frames) {
       fighter.attack2Frames = fighter.attack1Frames;
       fighter.attack2Width = fighter.attack1Width;
       fighter.attack2Height = fighter.attack1Height;
     }
-    if (!fighter.attack3) {
-      fighter.attack3 = fighter.attack2;
+    if (!fighter.attack3Frames) {
       fighter.attack3Frames = fighter.attack2Frames;
       fighter.attack3Width = fighter.attack2Width;
       fighter.attack3Height = fighter.attack2Height;
     }
-    if (!fighter.attack4) {
-      fighter.attack4 = fighter.attack3;
+    if (!fighter.attack4Frames) {
       fighter.attack4Frames = fighter.attack3Frames;
       fighter.attack4Width = fighter.attack3Width;
       fighter.attack4Height = fighter.attack3Height;
@@ -105,94 +84,12 @@ app.get("/fighters", (_, res) => {
 
 app.get("/backgrounds", (_, res) => {
   const bgs = db.prepare("SELECT * FROM Backgrounds").all();
-  bgs.forEach((bg) => {
-    if (bg.backgroundImage)
-      bg.backgroundImage = bufferToBase64(bg.backgroundImage);
-    if (bg.borderBackground) {
-      bg.borderBackground = `/backgrounds/${encodeURIComponent(bg.name)}/video`;
-    }
-  });
   res.json(bgs);
-});
-
-app.get("/backgrounds/:name/video", (req, res) => {
-  const row = db
-    .prepare("SELECT borderBackground FROM Backgrounds WHERE name = ?")
-    .get(req.params.name);
-  if (!row || !row.borderBackground)
-    return res.status(404).send("Video not found");
-  res.writeHead(200, {
-    "Content-Type": "video/mp4",
-    "Content-Length": row.borderBackground.length,
-  });
-  res.end(row.borderBackground);
-});
-
-app.get("/shield", (_, res) => {
-  const shield = db.prepare("SELECT * FROM Shield").get();
-  shield.image = bufferToBase64(shield.image);
-  res.json(shield);
-});
-
-app.get("/defaultBorderBackground", (req, res) => {
-  const bg = db.prepare("SELECT * FROM DefaultBorderBackground").get();
-  if (!bg) return res.status(404).json({ error: "Not found" });
-  res.json({ videoLength: bg.videoSource.length });
-});
-
-app.get("/defaultBorderBackground/video", (req, res) => {
-  const bg = db.prepare("SELECT * FROM DefaultBorderBackground").get();
-  if (!bg || !bg.videoSource) return res.status(404).send("Video not found");
-  res.writeHead(200, {
-    "Content-Type": "video/mp4",
-    "Content-Length": bg.videoSource.length,
-  });
-  res.end(bg.videoSource);
 });
 
 app.get("/music", (_, res) => {
   const songs = db.prepare("SELECT * FROM Music").all();
-  songs.forEach((song) => {
-    if (song.name) {
-      song.source = `/music/${encodeURIComponent(song.name)}/source`;
-    }
-  });
   res.json(songs);
-});
-
-app.get("/music/:name/source", (req, res) => {
-  const song = db
-    .prepare("SELECT source FROM Music WHERE name = ?")
-    .get(req.params.name);
-  if (!song || !song.source) return res.status(404).send("Music not found");
-  res.writeHead(200, {
-    "Content-Type": "audio/ogg",
-    "Content-Length": song.source.length,
-  });
-  res.end(song.source);
-});
-
-app.get("/ouch", (_, res) => {
-  const ouchs = db.prepare("SELECT * FROM OuchSound").all();
-  ouchs.forEach((ouch) => {
-    if (ouch.gender) {
-      ouch.source = `/ouch/${encodeURIComponent(ouch.gender)}/source`;
-    }
-  });
-  res.json(ouchs);
-});
-
-app.get("/ouch/:gender/source", (req, res) => {
-  const ouch = db
-    .prepare("SELECT source FROM OuchSound WHERE gender = ?")
-    .get(req.params.gender);
-  if (!ouch || !ouch.source)
-    return res.status(404).send("Ouch sound not found");
-  res.writeHead(200, {
-    "Content-Type": "audio/ogg",
-    "Content-Length": ouch.source.length,
-  });
-  res.end(ouch.source);
 });
 
 // ==========================

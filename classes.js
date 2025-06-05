@@ -1,7 +1,7 @@
 // ==========================
 // Imports
 // ==========================
-import { getShield, SoundEffect } from "./utils.js";
+import { SoundEffect } from "./utils.js";
 
 // ==========================
 // Sprite class: base renderable object
@@ -68,15 +68,9 @@ export class Fighter {
       width: 100,
       height: this.height,
     };
-    this.shield = null;
-    this.loadShield();
-  }
-
-  async loadShield() {
-    const { image: shieldUrl } = await getShield();
     this.shield = new Sprite({
       position: { x: this.position.x, y: this.position.y },
-      imageSrc: shieldUrl,
+      imageSrc: "/Assets/Shield/image.png",
       width: 100,
       height: 100,
       scale: 2,
@@ -248,7 +242,7 @@ export class Fighter {
   takeHit(damage) {
     if (this.isBlocking || this.dead) return;
     this.health = Math.max(this.health - damage, 0);
-    SoundEffect(`/ouch/${this.gender}/source`).play();
+    SoundEffect(`/Assets/OuchSound/${this.gender}/sound.bin`).play();
     if (this.health === 0) {
       this.switchSprite("death");
     } else {

@@ -25,7 +25,7 @@ player2.flipped = true;
 // ==========================
 // Background video setup
 // ==========================
-videoSource.src = "/defaultBorderBackground/video";
+videoSource.src = "/Assets/Backgrounds/Default/video.bin";
 videoElement.load();
 
 // ==========================
@@ -57,7 +57,7 @@ async function fillDivWithFighters() {
       allFighters.push(
         new MiniFighter(
           newCanvas,
-          fighter.idle,
+          `/Assets/Fighters/${fighter.name}/idle.png`,
           fighter.selectionMenuScale,
           fighter.idleFrames,
           {
@@ -83,7 +83,7 @@ function selectFighter(fighter) {
 }
 
 function setFighterData(player, fighter) {
-  player.setImage(fighter.idle);
+  player.setImage(`/Assets/Fighters/${fighter.name}/idle.png`);
   player.scale = fighter.selectedScale;
   player.framesMax = fighter.idleFrames;
   player.offset = {
