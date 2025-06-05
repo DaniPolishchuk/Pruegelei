@@ -60,10 +60,10 @@ socket.on("roomJoined", ({ playerAssignments }) => {
 // Animation Loop
 // ==========================
 function animate() {
-  window.requestAnimationFrame(animate);
   player1.update();
   player2.update();
   allFighters.forEach((f) => f.update());
+  requestAnimationFrame(animate);
 }
 
 animate();
@@ -91,12 +91,12 @@ async function fillDivWithFighters() {
       allFighters.push(
         new MiniFighter(
           newCanvas,
-          fighter.Idle,
-          fighter.SelectionMenuScale,
-          fighter.IdleFrames,
+          fighter.idle,
+          fighter.selectionMenuScale,
+          fighter.idleFrames,
           {
-            x: fighter.SelectionMenuOffsetX,
-            y: fighter.SelectionMenuOffsetY,
+            x: fighter.selectionMenuOffsetX,
+            y: fighter.selectionMenuOffsetY,
           },
         ),
       );
@@ -104,10 +104,10 @@ async function fillDivWithFighters() {
       newButton.addEventListener("click", () => {
         socket.emit("fighterSelected", {
           room,
-          fighterName: fighter.Name,
+          fighterName: fighter.name,
           playerId: myId,
         });
-        sessionStorage.setItem(`player${myId}`, fighter.Name);
+        sessionStorage.setItem(`player${myId}`, fighter.name);
         setFighter(myId, fighter);
       });
     }
@@ -116,15 +116,15 @@ async function fillDivWithFighters() {
 
 function setFighter(playerId, fighter) {
   const tgt = playerId === 1 ? player1 : player2;
-  tgt.setImage(fighter.Idle);
-  tgt.scale = fighter.SelectedScale;
-  tgt.framesMax = fighter.IdleFrames;
+  tgt.setImage(fighter.idle);
+  tgt.scale = fighter.selectedScale;
+  tgt.framesMax = fighter.idleFrames;
   tgt.offset = {
-    x: fighter.SelectedOffsetX,
-    y: fighter.SelectedOffsetY,
+    x: fighter.selectedOffsetX,
+    y: fighter.selectedOffsetY,
   };
   tgt.framesCurrent = 0;
-  tgt.name = fighter.Name;
+  tgt.name = fighter.name;
 
   if (playerId === 1) readyButton1.style.visibility = "visible";
   if (playerId === 2) readyButton2.style.visibility = "visible";
@@ -132,7 +132,7 @@ function setFighter(playerId, fighter) {
 
 socket.on("fighterSelected", ({ fighterName, playerId }) => {
   getFighters().then((fighters) => {
-    const f = fighters.find((x) => x.Name === fighterName);
+    const f = fighters.find((x) => x.name === fighterName);
     if (f) setFighter(playerId, f);
   });
   sessionStorage.setItem(`player${playerId}`, fighterName);

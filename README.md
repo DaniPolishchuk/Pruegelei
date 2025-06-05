@@ -73,7 +73,7 @@ docker run -d --platform linux/amd64 --name pruegelei_app -p 5001:5001 pilander/
 ## Updating the Docker Container
 
 ```bash
-brew install docker-buildx 
+brew install docker-buildx
 # Build the image locally
 docker build -t pilander/pruegelei:latest .
 # Log in to Docker Hub (one-time)

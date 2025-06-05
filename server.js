@@ -67,37 +67,37 @@ app.get(["/fight", "/fightL"], (_, res) =>
 app.get("/fighters", (_, res) => {
   const fighters = db.prepare("SELECT * FROM Fighters").all();
   fighters.forEach((fighter) => {
-    if (fighter.Idle) fighter.Idle = bufferToBase64(fighter.Idle);
-    if (fighter.Run) fighter.Run = bufferToBase64(fighter.Run);
-    if (fighter.Jump) fighter.Jump = bufferToBase64(fighter.Jump);
-    if (fighter.Fall) fighter.Fall = bufferToBase64(fighter.Fall);
-    if (fighter.Attack1) fighter.Attack1 = bufferToBase64(fighter.Attack1);
-    if (fighter.Attack2) fighter.Attack2 = bufferToBase64(fighter.Attack2);
-    if (fighter.Attack3) fighter.Attack3 = bufferToBase64(fighter.Attack3);
-    if (fighter.Attack4) fighter.Attack4 = bufferToBase64(fighter.Attack4);
-    if (fighter.TakeHit) fighter.TakeHit = bufferToBase64(fighter.TakeHit);
-    if (fighter.Death) fighter.Death = bufferToBase64(fighter.Death);
-    if (fighter.Block) {
-      fighter.Block = bufferToBase64(fighter.Block);
+    if (fighter.idle) fighter.idle = bufferToBase64(fighter.idle);
+    if (fighter.run) fighter.run = bufferToBase64(fighter.run);
+    if (fighter.jump) fighter.jump = bufferToBase64(fighter.jump);
+    if (fighter.fall) fighter.fall = bufferToBase64(fighter.fall);
+    if (fighter.attack1) fighter.attack1 = bufferToBase64(fighter.attack1);
+    if (fighter.attack2) fighter.attack2 = bufferToBase64(fighter.attack2);
+    if (fighter.attack3) fighter.attack3 = bufferToBase64(fighter.attack3);
+    if (fighter.attack4) fighter.attack4 = bufferToBase64(fighter.attack4);
+    if (fighter.takeHit) fighter.takeHit = bufferToBase64(fighter.takeHit);
+    if (fighter.death) fighter.death = bufferToBase64(fighter.death);
+    if (fighter.block) {
+      fighter.block = bufferToBase64(fighter.block);
     }
 
-    if (!fighter.Attack2) {
-      fighter.Attack2 = fighter.Attack1;
-      fighter.Attack2Frames = fighter.Attack1Frames;
-      fighter.Attack2Width = fighter.Attack1Width;
-      fighter.Attack2Height = fighter.Attack1Height;
+    if (!fighter.attack2) {
+      fighter.attack2 = fighter.attack1;
+      fighter.attack2Frames = fighter.attack1Frames;
+      fighter.attack2Width = fighter.attack1Width;
+      fighter.attack2Height = fighter.attack1Height;
     }
-    if (!fighter.Attack3) {
-      fighter.Attack3 = fighter.Attack2;
-      fighter.Attack3Frames = fighter.Attack2Frames;
-      fighter.Attack3Width = fighter.Attack2Width;
-      fighter.Attack3Height = fighter.Attack2Height;
+    if (!fighter.attack3) {
+      fighter.attack3 = fighter.attack2;
+      fighter.attack3Frames = fighter.attack2Frames;
+      fighter.attack3Width = fighter.attack2Width;
+      fighter.attack3Height = fighter.attack2Height;
     }
-    if (!fighter.Attack4) {
-      fighter.Attack4 = fighter.Attack3;
-      fighter.Attack4Frames = fighter.Attack3Frames;
-      fighter.Attack4Width = fighter.Attack3Width;
-      fighter.Attack4Height = fighter.Attack3Height;
+    if (!fighter.attack4) {
+      fighter.attack4 = fighter.attack3;
+      fighter.attack4Frames = fighter.attack3Frames;
+      fighter.attack4Width = fighter.attack3Width;
+      fighter.attack4Height = fighter.attack3Height;
     }
   });
   res.json(fighters);
@@ -106,10 +106,10 @@ app.get("/fighters", (_, res) => {
 app.get("/backgrounds", (_, res) => {
   const bgs = db.prepare("SELECT * FROM Backgrounds").all();
   bgs.forEach((bg) => {
-    if (bg.BackgroundImage)
-      bg.BackgroundImage = bufferToBase64(bg.BackgroundImage);
-    if (bg.BorderBackground) {
-      bg.BorderBackground = `/backgrounds/${encodeURIComponent(bg.Name)}/video`;
+    if (bg.backgroundImage)
+      bg.backgroundImage = bufferToBase64(bg.backgroundImage);
+    if (bg.borderBackground) {
+      bg.borderBackground = `/backgrounds/${encodeURIComponent(bg.name)}/video`;
     }
   });
   res.json(bgs);
@@ -117,44 +117,44 @@ app.get("/backgrounds", (_, res) => {
 
 app.get("/backgrounds/:name/video", (req, res) => {
   const row = db
-    .prepare("SELECT BorderBackground FROM Backgrounds WHERE Name = ?")
+    .prepare("SELECT borderBackground FROM Backgrounds WHERE name = ?")
     .get(req.params.name);
-  if (!row || !row.BorderBackground)
+  if (!row || !row.borderBackground)
     return res.status(404).send("Video not found");
   res.writeHead(200, {
     "Content-Type": "video/mp4",
-    "Content-Length": row.BorderBackground.length,
+    "Content-Length": row.borderBackground.length,
   });
-  res.end(row.BorderBackground);
+  res.end(row.borderBackground);
 });
 
 app.get("/shield", (_, res) => {
   const shield = db.prepare("SELECT * FROM Shield").get();
-  shield.Image = bufferToBase64(shield.Image);
+  shield.image = bufferToBase64(shield.image);
   res.json(shield);
 });
 
 app.get("/defaultBorderBackground", (req, res) => {
   const bg = db.prepare("SELECT * FROM DefaultBorderBackground").get();
   if (!bg) return res.status(404).json({ error: "Not found" });
-  res.json({ VideoLength: bg.VideoSource.length });
+  res.json({ videoLength: bg.videoSource.length });
 });
 
 app.get("/defaultBorderBackground/video", (req, res) => {
   const bg = db.prepare("SELECT * FROM DefaultBorderBackground").get();
-  if (!bg || !bg.VideoSource) return res.status(404).send("Video not found");
+  if (!bg || !bg.videoSource) return res.status(404).send("Video not found");
   res.writeHead(200, {
     "Content-Type": "video/mp4",
-    "Content-Length": bg.VideoSource.length,
+    "Content-Length": bg.videoSource.length,
   });
-  res.end(bg.VideoSource);
+  res.end(bg.videoSource);
 });
 
 app.get("/music", (_, res) => {
   const songs = db.prepare("SELECT * FROM Music").all();
   songs.forEach((song) => {
-    if (song.Name) {
-      song.Source = `/music/${encodeURIComponent(song.Name)}/source`;
+    if (song.name) {
+      song.source = `/music/${encodeURIComponent(song.name)}/source`;
     }
   });
   res.json(songs);
@@ -162,21 +162,21 @@ app.get("/music", (_, res) => {
 
 app.get("/music/:name/source", (req, res) => {
   const song = db
-    .prepare("SELECT Source FROM Music WHERE Name = ?")
+    .prepare("SELECT source FROM Music WHERE name = ?")
     .get(req.params.name);
-  if (!song || !song.Source) return res.status(404).send("Music not found");
+  if (!song || !song.source) return res.status(404).send("Music not found");
   res.writeHead(200, {
     "Content-Type": "audio/ogg",
-    "Content-Length": song.Source.length,
+    "Content-Length": song.source.length,
   });
-  res.end(song.Source);
+  res.end(song.source);
 });
 
 app.get("/ouch", (_, res) => {
   const ouchs = db.prepare("SELECT * FROM OuchSound").all();
   ouchs.forEach((ouch) => {
-    if (ouch.Gender) {
-      ouch.Source = `/ouch/${encodeURIComponent(ouch.Gender)}/source`;
+    if (ouch.gender) {
+      ouch.source = `/ouch/${encodeURIComponent(ouch.gender)}/source`;
     }
   });
   res.json(ouchs);
@@ -184,15 +184,15 @@ app.get("/ouch", (_, res) => {
 
 app.get("/ouch/:gender/source", (req, res) => {
   const ouch = db
-    .prepare("SELECT Source FROM OuchSound WHERE Gender = ?")
+    .prepare("SELECT source FROM OuchSound WHERE gender = ?")
     .get(req.params.gender);
-  if (!ouch || !ouch.Source)
+  if (!ouch || !ouch.source)
     return res.status(404).send("Ouch sound not found");
   res.writeHead(200, {
     "Content-Type": "audio/ogg",
-    "Content-Length": ouch.Source.length,
+    "Content-Length": ouch.source.length,
   });
-  res.end(ouch.Source);
+  res.end(ouch.source);
 });
 
 // ==========================
@@ -302,9 +302,8 @@ io.on("connection", (socket) => {
 
   socket.on("startGame", (room) => {
     if (!lastBackground[room]) {
-      const rows = db.prepare("SELECT Name FROM Backgrounds").all();
-      lastBackground[room] =
-      rows[Math.floor(Math.random() * rows.length)].Name;
+      const rows = db.prepare("SELECT name FROM Backgrounds").all();
+      lastBackground[room] = rows[Math.floor(Math.random() * rows.length)].name;
     }
     io.in(room).emit("gameStart", { background: lastBackground[room] });
 
@@ -362,7 +361,10 @@ io.on("connection", (socket) => {
     const t = roomTimers[roomName];
     if (!t) return;
     t.paused = !t.paused;
-    io.in(roomName).emit(t.paused ? "timerPaused" : "timerResumed", t.remaining);
+    io.in(roomName).emit(
+      t.paused ? "timerPaused" : "timerResumed",
+      t.remaining,
+    );
   });
 
   socket.on("requestRematch", ({ roomName }) => {

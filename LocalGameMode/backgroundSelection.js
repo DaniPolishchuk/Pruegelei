@@ -36,9 +36,9 @@ player2.flipped = true;
 // Animation Loop
 // ==========================
 function animate() {
-  window.requestAnimationFrame(animate);
   player1.update();
   player2.update();
+  requestAnimationFrame(animate);
 }
 
 // ==========================

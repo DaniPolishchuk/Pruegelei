@@ -56,7 +56,7 @@ let isPaused = false;
 // ==========================
 function showRematchModal() {
   setTimeout(function () {
-    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
+    [yesBtn, reselectBtn, noBtn].forEach((btn) => (btn.disabled = false));
     header.textContent = "Rematch?";
 
     yesBtn.onclick = () => {
@@ -114,7 +114,6 @@ async function setUpGame() {
   });
 
   await initializeGame();
-  requestAnimationFrame(animate);
   const initial = parseInt(document.getElementById("timer").textContent, 10);
   startTimer(
     initial,
@@ -127,6 +126,7 @@ async function setUpGame() {
       }
     },
   );
+  requestAnimationFrame(animate);
 }
 
 async function initializeGame() {

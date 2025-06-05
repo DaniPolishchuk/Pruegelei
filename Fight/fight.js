@@ -47,26 +47,26 @@ let isPaused = false;
 let rematchRequested = false;
 socket.on("showRematchModal", () => {
   setTimeout(function () {
-    yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = false;
+    [yesBtn, reselectBtn, noBtn].forEach((btn) => (btn.disabled = false));
 
     header.textContent = "Rematch?";
 
     yesBtn.onclick = () => {
       socket.emit("rematchResponse", { roomName: room, decision: true });
       header.textContent = "Waiting…";
-      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+      [yesBtn, reselectBtn, noBtn].forEach((btn) => (btn.disabled = true));
     };
 
     reselectBtn.onclick = () => {
       socket.emit("reselectResponse", { roomName: room });
       header.textContent = "Waiting for reselect vote…";
-      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+      [yesBtn, reselectBtn, noBtn].forEach((btn) => (btn.disabled = true));
     };
 
     noBtn.onclick = () => {
       socket.emit("rematchResponse", { roomName: room, decision: false });
       header.textContent = "Leaving…";
-      yesBtn.disabled = reselectBtn.disabled = noBtn.disabled = true;
+      [yesBtn, reselectBtn, noBtn].forEach((btn) => (btn.disabled = true));
     };
 
     modal.style.display = "flex";
@@ -86,7 +86,9 @@ socket.on("rematchEnd", () => {
 });
 
 socket.on("timerTick", (remaining) => {
-  document.getElementById("timer").textContent = remaining;
+  if (!player1.dead && !player2.dead) {
+    document.getElementById("timer").textContent = remaining;
+  }
 });
 
 socket.on("timerEnd", () => {
