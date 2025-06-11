@@ -12,7 +12,9 @@ export const ctx = canvas?.getContext("2d") ?? offscreenCtx;
 if (canvas) {
   canvas.width = 1280;
   canvas.height = 720;
+  canvas.style.imageRendering = "pixelated";
 }
+ctx.imageSmoothingEnabled = false;
 
 const MOVE_SPEED = canvas?.width / 275;
 const SLIP_SPEED = 1;

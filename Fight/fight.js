@@ -328,6 +328,8 @@ function animate() {
   offscreenCtx.translate(offscreenCanvas.width / 2, offscreenCanvas.height);
   offscreenCtx.scale(scale, scale);
   offscreenCtx.translate(-cameraX, -canvas.height);
+  offscreenCtx.imageSmoothingEnabled = false;
+  offscreenCanvas.style.imageRendering = "pixelated";
 
   backgroundSprite.draw(offscreenCtx);
   player1.update(offscreenCtx, groundLvl, gravity);

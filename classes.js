@@ -203,8 +203,8 @@ export class Fighter {
       this.attackBox.position.x = this.position.x + this.baseAttackBoxOffset.x;
     } else {
       this.attackBox.position.x =
-        this.position.x -
-        this.width +
+        this.position.x +
+        this.width -
         this.baseAttackBoxOffset.x -
         this.attackBox.width;
     }
@@ -385,6 +385,7 @@ export class MiniFighter {
   constructor(canvas, idle, scale, idleFrames, offset) {
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
+    this.ctx.imageSmoothingEnabled = false;
     this.image = new Image();
     this.image.onload = () => (this.loaded = true);
     this.image.onerror = () => (this.loaded = false);
