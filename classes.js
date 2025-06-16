@@ -47,7 +47,6 @@ export class Fighter {
     this.position = position;
     this.currentSpriteName = "idle";
     this.image = new Image();
-    this.scale = 1;
     this.framesCurrent = 0;
     this.framesElapsed = 0;
     this.framesHold = 7;
@@ -225,7 +224,7 @@ export class Fighter {
           x: this.flip
             ? playerMiddle - this.shield.width / 2 - 30
             : this.position.x - 50,
-          y: this.position.y,
+          y: this.position.y - 25,
         };
 
         // Draw shield sprite
