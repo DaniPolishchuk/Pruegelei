@@ -225,14 +225,39 @@ io.on("connection", (socket) => {
       }
     }, 1000);
   });
-
   socket.on("disconnect", () => {
     for (const [roomName, info] of Object.entries(rooms)) {
+      // 1) Mark this socket as disconnected
+      let justDisconnected = false;
       for (const [, rec] of info.players.entries()) {
-        if (rec.socket === socket) rec.socket = null;
+        if (rec.socket === socket) {
+          rec.socket = null;
+          justDisconnected = true;
+        }
       }
+
+      // 2) See who’s still connected in this room
+      const stillHere = [...info.players.values()].filter((r) => r.socket);
+
+      // 3) Only _after_ the rematch phase has begun, if one left and one remains
+      //    rematchResponses[roomName] exists only once you've emitted requestRematch
+      if (
+        justDisconnected &&
+        stillHere.length === 1 &&
+        rematchResponses[roomName]
+      ) {
+        // send them back to StartMenu
+        stillHere[0].socket.emit("rematchEnd");
+
+        // clean up any old vote state
+        delete rematchResponses[roomName];
+        delete reselectResponses[roomName];
+      }
+
+      // 4) If everyone’s gone, delete the room after 10 seconds
       if ([...info.players.values()].every((r) => r.socket === null)) {
         setTimeout(() => {
+          // double-check nobody rejoined
           if ([...info.players.values()].every((r) => r.socket === null)) {
             delete rooms[roomName];
             delete lastBackground[roomName];
