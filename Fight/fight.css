@@ -39,14 +39,15 @@ body {
   width: 100%;
   display: flex;
   justify-content: flex-end;
-  border-top: 4px solid white;
-  border-left: 4px solid white;
-  border-bottom: 4px solid white;
+  border-top: 4px solid black;
+  border-left: 4px solid black;
+  border-bottom: 4px solid black;
+  border-radius: 20px 0 0 20px;
 }
 
 #player1Health {
   position: absolute;
-  background: #818cf8;
+  background: orange;
   top: 0;
   right: 0;
   bottom: 0;
@@ -60,33 +61,35 @@ body {
 }
 
 #timer {
-  background-color: red;
+  background-color: black;
   font-size: 45px;
   text-transform: uppercase;
   text-shadow:
     2px 2px 0px black,
-    4px 4px 0px gray;
-  color: white;
+    4px 4px 0px orange;
+  color: red;
   height: 100px;
   width: 100px;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 3px solid white;
+  border: 3px solid orange;
+  border-radius: 20px;
 }
 
 #player2HealthBar {
   position: relative;
   width: 100%;
-  border-top: 4px solid white;
-  border-bottom: 4px solid white;
-  border-right: 4px solid white;
+  border-top: 4px solid black;
+  border-bottom: 4px solid black;
+  border-right: 4px solid black;
+  border-radius: 0 20px 20px 0;
 }
 
 #player2Health {
   position: absolute;
-  background: #818cf8;
+  background: orange;
   top: 0;
   right: 0;
   bottom: 0;
