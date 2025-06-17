@@ -96,48 +96,6 @@ export function decisionMaking(qDecisionTable, playerOne, playerTwo) {
 // ==========================
 // Controls
 // ==========================
-export async function action(choice, keys, player) {
-  keys.s.pressed = false;
-  keys.a.pressed = false;
-  keys.d.pressed = false;
-  player.isBlocking = false;
-  player.lastKey = null;
-
-  if (!player.dead) {
-    switch (choice) {
-      case 0:
-        keys.s.pressed = true;
-        player.lastKey = "s";
-        player.isBlocking = true;
-        break;
-      case 1:
-        keys.a.pressed = true;
-        player.lastKey = "a";
-        break;
-      case 2:
-        keys.d.pressed = true;
-        player.lastKey = "d";
-        break;
-      case 3:
-        if (player.dead || player.isBlocking) return;
-        if (player.position.y + player.height >= groundLvl) {
-          player.velocity.y = -JUMP_VELOCITY;
-        }
-        break;
-      case 4:
-        if (!player.isAttacking) {
-          player.attack();
-          await determineDamage(player);
-          player.attackFrames = 7;
-          player.framesMax = 7;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-}
-
 export async function actionPlayer2(choice, keys, player) {
   keys.ArrowDown.pressed = false;
   keys.ArrowLeft.pressed = false;
