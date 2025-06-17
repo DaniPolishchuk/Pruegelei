@@ -1,11 +1,36 @@
 * {
   box-sizing: border-box;
   font-family: "Press Start 2P", cursive;
-  overflow: hidden;
 }
 
 body {
   text-align: center;
+}
+
+.aiButton {
+  cursor: pointer;
+  border: orange 1px solid;
+  font-family: "Press Start 2P", cursive;
+  font-size: 14px;
+  width: 90px;
+  height: 40px;
+  background-color: black;
+  color: orange;
+  text-shadow:
+          2px 2px 0 yellow,
+          4px 4px 0 red;
+  transition: background-color 0.3s, color 0.3s;
+  user-select: none;
+}
+
+.aiButton:hover {
+  background-color: orange;
+  color: black;
+}
+
+.aiButton.active {
+  background-color: orange;
+  color: black;
 }
 
 #mainMenu {

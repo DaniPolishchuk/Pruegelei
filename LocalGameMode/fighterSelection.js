@@ -22,6 +22,32 @@ const player1 = new MiniFighter(player1canvas, null);
 const player2 = new MiniFighter(player2canvas, null);
 player2.flipped = true;
 
+const fighter2 = document.getElementById("fighter2");
+
+const aiButton = document.createElement("button");
+aiButton.textContent = "KI";
+aiButton.classList.add("aiButton");
+aiButton.id = "aiToggleButton";
+
+aiButton.style.position = "absolute";
+aiButton.style.top = "5vh";
+aiButton.style.right = "20vh";
+
+// SessionStorage lesen & setzen
+const savedAI = sessionStorage.getItem("aiEnabled") === "true";
+if (savedAI) {
+  aiButton.classList.add("active");
+}
+
+aiButton.addEventListener("click", () => {
+  aiButton.classList.toggle("active");
+  const isActive = aiButton.classList.contains("active");
+  sessionStorage.setItem("ai", isActive.toString());
+  console.log("KI ist jetzt:", isActive ? "AN" : "AUS");
+});
+
+fighter2.appendChild(aiButton);
+
 // ==========================
 // Background video setup
 // ==========================

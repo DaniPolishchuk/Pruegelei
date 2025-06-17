@@ -34,6 +34,11 @@ import {
   header,
   modal,
 } from "../utils.js";
+import {
+  actionPlayer2,
+  decisionMaking,
+  loadQTableFromURL,
+} from "../AI/gameLogic.js";
 
 // ==========================
 // Input Tracking
@@ -50,6 +55,7 @@ const keys = {
 let groundLvl, background;
 let rematchRequested = false;
 let isPaused = false;
+const ai = sessionStorage.getItem("ai") === "true";
 
 // ==========================
 // Rematch Modal (local)
@@ -95,6 +101,9 @@ const player2 = new Fighter({
 // Game Initialization
 // ==========================
 async function setUpGame() {
+  if (ai) {
+    qTable = await loadQTableFromURL("../AI/qtable_20250616_113118.bin");
+  }
   const { imageSrc, groundLevel, borderBackground } = await setBackground(
     sessionStorage.getItem("background"),
   );
@@ -173,8 +182,10 @@ function processAttackCollision(attacker, defender, defenderHealthBar) {
 // ==========================
 let prevGp1Attack = false;
 let prevGp2Attack = false;
+let qTable;
+const epsilon = 0.1;
 
-function animate() {
+async function animate() {
   requestAnimationFrame(animate);
   if (isPaused) return;
 
@@ -189,6 +200,18 @@ function animate() {
   offscreenCtx.translate(-cameraX, -canvas.height);
   offscreenCtx.imageSmoothingEnabled = false;
   offscreenCanvas.style.imageRendering = "pixelated";
+
+  if (ai) {
+    console.log("AIMove");
+    let agentAction = decisionMaking(qTable, player2, player1);
+    if (Math.random() > epsilon) {
+      await actionPlayer2(agentAction.index, keys, player2);
+      console.log("First");
+    } else {
+      await actionPlayer2(agentAction.secondIndex, keys, player2);
+      console.log("Second");
+    }
+  }
 
   background.draw(offscreenCtx);
   player1.update(offscreenCtx, groundLvl, gravity);
