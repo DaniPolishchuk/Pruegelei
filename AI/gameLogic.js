@@ -698,10 +698,14 @@ export async function actionPlayer2(choice, keys, player) {
         break;
       case 4:
         if (!player.isAttacking) {
+          //player.attackStyle = "style1";
           player.attack();
+          player.attackbox = player.sprites.attack1.attackBox;
+          player.framesMax = player.sprites.attack1.framesMax;
+          console.log(player.framesMax);
+          console.log(player.attackFrames);
           await determineDamage(player);
-          player.attackFrames = 7;
-          player.framesMax = 7;
+          console.log(player.damage);
         }
         break;
       default:

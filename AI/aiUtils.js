@@ -77,8 +77,8 @@ export async function determineDamage(player) {
     player.damage = 0;
     return;
   }
-  const surface = ATTACKBOX_WIDTH * Math.abs(ATTACKBOX_HEIGHT);
-  const framesCount = ATTACK_FRAMES;
+  const surface = player.attackBox.width * Math.abs(player.attackBox.height);
+  const framesCount = player.framesMax;
   const calculatedDamage =
     5 / (surface / avgSurface) / (avgFramesCount / framesCount);
   player.damage = calculatedDamage > 10 ? 10 : calculatedDamage;

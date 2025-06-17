@@ -199,14 +199,11 @@ async function animate() {
   offscreenCanvas.style.imageRendering = "pixelated";
 
   if (ai) {
-    console.log("AIMove");
     let agentAction = decisionMaking(qTable, player2, player1);
     if (Math.random() > epsilon) {
       await actionPlayer2(agentAction.index, keys, player2);
-      console.log("First");
     } else {
       await actionPlayer2(agentAction.secondIndex, keys, player2);
-      console.log("Second");
     }
   }
 
@@ -368,63 +365,65 @@ window.addEventListener("keydown", (event) => {
   }
 
   // Player 2
-  if (!player2.dead) {
-    switch (event.key) {
-      case "ArrowDown":
-        keys.ArrowDown.pressed = true;
-        player2.lastKey = "ArrowDown";
-        player2.isBlocking = true;
-        break;
-      case "ArrowLeft":
-        keys.ArrowLeft.pressed = true;
-        player2.lastKey = "ArrowLeft";
-        break;
-      case "ArrowRight":
-        keys.ArrowRight.pressed = true;
-        player2.lastKey = "ArrowRight";
-        break;
-      case "ArrowUp":
-        if (player2.dead || player2.isBlocking) return;
-        if (player2.position.y + player2.height >= groundLvl) {
-          player2.velocity.y = -JUMP_VELOCITY;
-        }
-        break;
-      case "0":
-        if (!player2.isAttacking) {
-          player2.attackStyle = "style1";
-          player2.attackBox = player2.sprites.attack1.attackBox;
-          player2.attackFrames = player2.sprites.attack1.framesMax;
-          determineDamage(player2);
-          player2.attack();
-        }
-        break;
-      case "9":
-        if (!player2.isAttacking) {
-          player2.attackStyle = "style2";
-          player2.attackBox = player2.sprites.attack2.attackBox;
-          player2.attackFrames = player2.sprites.attack2.framesMax;
-          determineDamage(player2);
-          player2.attack();
-        }
-        break;
-      case "8":
-        if (!player2.isAttacking) {
-          player2.attackStyle = "style3";
-          player2.attackBox = player2.sprites.attack3.attackBox;
-          player2.attackFrames = player2.sprites.attack3.framesMax;
-          determineDamage(player2);
-          player2.attack();
-        }
-        break;
-      case "7":
-        if (!player2.isAttacking) {
-          player2.attackStyle = "style4";
-          player2.attackBox = player2.sprites.attack4.attackBox;
-          player2.attackFrames = player2.sprites.attack4.framesMax;
-          determineDamage(player2);
-          player2.attack();
-        }
-        break;
+  if (!ai) {
+    if (!player2.dead) {
+      switch (event.key) {
+        case "ArrowDown":
+          keys.ArrowDown.pressed = true;
+          player2.lastKey = "ArrowDown";
+          player2.isBlocking = true;
+          break;
+        case "ArrowLeft":
+          keys.ArrowLeft.pressed = true;
+          player2.lastKey = "ArrowLeft";
+          break;
+        case "ArrowRight":
+          keys.ArrowRight.pressed = true;
+          player2.lastKey = "ArrowRight";
+          break;
+        case "ArrowUp":
+          if (player2.dead || player2.isBlocking) return;
+          if (player2.position.y + player2.height >= groundLvl) {
+            player2.velocity.y = -JUMP_VELOCITY;
+          }
+          break;
+        case "0":
+          if (!player2.isAttacking) {
+            player2.attackStyle = "style1";
+            player2.attackBox = player2.sprites.attack1.attackBox;
+            player2.attackFrames = player2.sprites.attack1.framesMax;
+            determineDamage(player2);
+            player2.attack();
+          }
+          break;
+        case "9":
+          if (!player2.isAttacking) {
+            player2.attackStyle = "style2";
+            player2.attackBox = player2.sprites.attack2.attackBox;
+            player2.attackFrames = player2.sprites.attack2.framesMax;
+            determineDamage(player2);
+            player2.attack();
+          }
+          break;
+        case "8":
+          if (!player2.isAttacking) {
+            player2.attackStyle = "style3";
+            player2.attackBox = player2.sprites.attack3.attackBox;
+            player2.attackFrames = player2.sprites.attack3.framesMax;
+            determineDamage(player2);
+            player2.attack();
+          }
+          break;
+        case "7":
+          if (!player2.isAttacking) {
+            player2.attackStyle = "style4";
+            player2.attackBox = player2.sprites.attack4.attackBox;
+            player2.attackFrames = player2.sprites.attack4.framesMax;
+            determineDamage(player2);
+            player2.attack();
+          }
+          break;
+      }
     }
   }
 });
