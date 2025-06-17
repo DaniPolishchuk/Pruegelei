@@ -23,15 +23,28 @@ export class Sprite {
     this.image.src = imageSrc;
   }
 
-  draw(ctxArg) {
+  draw(ctxArg, flip = false) {
     if (!this.imageLoaded) return;
-    ctxArg.drawImage(
-      this.image,
-      this.position.x,
-      this.position.y,
-      this.width * this.scale,
-      this.height * this.scale,
-    );
+    ctxArg.save();
+    if (flip) {
+      ctxArg.scale(-1, 1);
+      ctxArg.drawImage(
+        this.image,
+        -(this.position.x + this.width * this.scale),
+        this.position.y,
+        this.width * this.scale,
+        this.height * this.scale,
+      );
+    } else {
+      ctxArg.drawImage(
+        this.image,
+        this.position.x,
+        this.position.y,
+        this.width * this.scale,
+        this.height * this.scale,
+      );
+    }
+    ctxArg.restore();
   }
 
   update(ctxArg) {
@@ -47,7 +60,6 @@ export class Fighter {
     this.position = position;
     this.currentSpriteName = "idle";
     this.image = new Image();
-    this.scale = 1;
     this.framesCurrent = 0;
     this.framesElapsed = 0;
     this.framesHold = 7;
@@ -77,14 +89,14 @@ export class Fighter {
     });
   }
 
-  draw(ctxArg) {
+  draw(ctxArg, flip) {
     const frameWidth = this.image.width / this.framesMax;
     const drawWidth = frameWidth * this.scale;
     const drawHeight = this.image.height * this.scale;
     const drawX = this.position.x - this.offset.x;
     const drawY = this.position.y - this.offset.y;
 
-    if (this.flip) {
+    if (flip) {
       ctxArg.save();
       ctxArg.scale(-1, 1);
       ctxArg.drawImage(
@@ -137,7 +149,7 @@ export class Fighter {
 
   update(ctxArg, groundLvl, gravity) {
     // Draw the current frame of the fighter
-    this.draw(ctxArg);
+    this.draw(ctxArg, this.flip);
 
     // Increment the frame counter for sprite animation
     this.framesElapsed++;
@@ -223,13 +235,13 @@ export class Fighter {
         let playerMiddle = this.position.x + this.width / 2;
         this.shield.position = {
           x: this.flip
-            ? playerMiddle - this.shield.width / 2 - 30
+            ? playerMiddle - this.shield.width / 2 - 50
             : this.position.x - 50,
-          y: this.position.y,
+          y: this.position.y - 25,
         };
 
         // Draw shield sprite
-        this.shield.draw(ctxArg);
+        this.shield.draw(ctxArg, this.flip);
       }
 
       // Ensure vertical movement continues during block

@@ -144,10 +144,7 @@ async function initializeGame() {
     setFighterData(player2, true, sessionStorage.getItem("player2")),
   ]);
 
-  await Promise.all([
-    determineDamage(player1),
-    determineDamage(player2),
-  ]);
+  await Promise.all([determineDamage(player1), determineDamage(player2)]);
 }
 
 setUpGame();
