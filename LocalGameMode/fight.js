@@ -38,7 +38,7 @@ import {
   actionPlayer2,
   decisionMaking,
   loadQTableFromURL,
-} from "../AI/gameLogic.js";
+} from "../AI/aiUtils.js";
 
 // ==========================
 // Input Tracking
@@ -198,12 +198,14 @@ async function animate() {
   offscreenCtx.imageSmoothingEnabled = false;
   offscreenCanvas.style.imageRendering = "pixelated";
 
-  if (ai) {
-    let agentAction = decisionMaking(qTable, player2, player1);
-    if (Math.random() > epsilon) {
-      await actionPlayer2(agentAction.index, keys, player2);
-    } else {
-      await actionPlayer2(agentAction.secondIndex, keys, player2);
+  if (!player1.dead) {
+    if (ai) {
+      let agentAction = decisionMaking(qTable, player2, player1);
+      if (Math.random() > epsilon) {
+        await actionPlayer2(agentAction.index, keys, player2);
+      } else {
+        await actionPlayer2(agentAction.secondIndex, keys, player2);
+      }
     }
   }
 

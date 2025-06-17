@@ -1,4 +1,5 @@
-import { CANVAS_HEIGHT, CANVAS_WIDTH } from "./gameLogic.js";
+import { CANVAS_HEIGHT } from "./trainingUtils.js";
+import { CANVAS_WIDTH } from "./trainingUtils.js";
 
 export class Fighter {
   constructor({ position, velocity }) {

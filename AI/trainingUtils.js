@@ -1,9 +1,11 @@
 // ==========================
 // Imports
 // ==========================
-import ndarray from "https://esm.sh/ndarray@1.0.19";
-import { rectangularCollision } from "../utils.js";
-
+import ndarray from "ndarray";
+// ==========================
+// CONSTANTS
+// ==========================
+export const CANVAS_WIDTH = 1280;
 export const CANVAS_HEIGHT = 720;
 const DIVISOR = CANVAS_HEIGHT;
 export const JUMP_VELOCITY = CANVAS_HEIGHT / 45;
@@ -14,6 +16,8 @@ export const sizeX2 = 2; // On the ground or not
 export const sizeY2 = 2; // Enemy is attacking?
 export const offsetY = sizeY1;
 export const actions = 5;
+const SLIP_SPEED = 1;
+const MOVE_SPEED = CANVAS_WIDTH / 275;
 
 export function discretizeByDiv(value) {
   return Math.round(value / DIVISOR);
@@ -168,14 +172,9 @@ export async function actionPlayer2(choice, keys, player) {
         break;
       case 4:
         if (!player.isAttacking) {
-          player.attackStyle = "style1";
           player.attack();
-          player.attackbox = player.sprites.attack1.attackBox;
-          player.framesMax = player.sprites.attack1.framesMax;
-          console.log(player.framesMax);
-          console.log(player.attackFrames);
+          player.framesMax = 7;
           await determineDamage(player);
-          console.log(player.damage);
         }
         break;
       default:
@@ -196,4 +195,104 @@ export async function determineDamage(player) {
   const calculatedDamage =
     5 / (surface / avgSurface) / (avgFramesCount / framesCount);
   player.damage = calculatedDamage > 10 ? 10 : calculatedDamage;
+}
+
+export function resolveVerticalCollisionBetweenFighters(player1, player2) {
+  if (player1.velocity.y > 0) {
+    if (
+      player1.hitbox.position.x <
+        player2.hitbox.position.x + player2.hitbox.width &&
+      player1.hitbox.position.x + player1.hitbox.width >
+        player2.hitbox.position.x
+    ) {
+      if (
+        player1.hitbox.position.y + player1.hitbox.height >
+          player2.hitbox.position.y &&
+        player1.hitbox.position.y < player2.hitbox.position.y
+      ) {
+        player1.hitbox.position.y =
+          player2.hitbox.position.y - player1.hitbox.height;
+        player1.velocity.y = 0;
+
+        const fighterCenter =
+          player1.hitbox.position.x + player1.hitbox.width / 2;
+        const otherCenter =
+          player2.hitbox.position.x + player2.hitbox.width / 2;
+
+        player1.velocity.x =
+          fighterCenter < otherCenter ? -SLIP_SPEED : SLIP_SPEED;
+      }
+    }
+  }
+}
+
+export function updateHorizontalMovement(
+  player1,
+  player2,
+  leftPressed,
+  rightPressed,
+  leftKey,
+  rightKey,
+) {
+  if (
+    player1.isAttacking ||
+    player1.isBlocking ||
+    player1.dead ||
+    player1.currentSpriteName === "takeHit"
+  )
+    return;
+  let canMoveLeft = leftPressed && player1.position.x > 0;
+  let canMoveRight =
+    rightPressed && player1.position.x + player1.width < CANVAS_WIDTH;
+
+  if (
+    player1.hitbox.position.y + player1.hitbox.height >
+    player2.hitbox.position.y
+  ) {
+    if (player1.flip) {
+      canMoveLeft =
+        canMoveLeft &&
+        player1.hitbox.position.x >
+          player2.hitbox.position.x + player2.hitbox.width;
+    } else {
+      canMoveRight =
+        canMoveRight &&
+        player1.hitbox.position.x + player1.hitbox.width <
+          player2.hitbox.position.x;
+    }
+  }
+
+  if (canMoveLeft) {
+    player1.velocity.x = -MOVE_SPEED;
+    player1.lastKey = leftKey;
+  } else if (canMoveRight) {
+    player1.velocity.x = MOVE_SPEED;
+    player1.lastKey = rightKey;
+  } else {
+    //tie
+  }
+}
+
+export function rectangularCollision(f1, f2) {
+  const { position: p1, width: w1, height: h1 } = f1.attackBox;
+  const left1 = p1.x,
+    right1 = p1.x + w1;
+  const top1 = Math.min(p1.y, p1.y + h1),
+    bottom1 = Math.max(p1.y, p1.y + h1);
+  const left2 = f2.position.x,
+    right2 = f2.position.x + f2.width;
+  const top2 = f2.position.y,
+    bottom2 = f2.position.y + f2.height;
+
+  return (
+    right1 >= left2 && left1 <= right2 && bottom1 >= top2 && top1 <= bottom2
+  );
+}
+
+export function determineWinner(p1, p2) {
+  if (p1.health > p2.health) {
+    p2.dead = true;
+  } else if (p1.health < p2.health) {
+    p1.dead = true;
+  }
 }

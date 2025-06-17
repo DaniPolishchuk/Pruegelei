@@ -1,51 +1,234 @@
-export const CANVAS_WIDTH = 1280;
-export const CANVAS_HEIGHT = 720;
-export const gravity = 0.5;
-export const JUMP_VELOCITY = CANVAS_HEIGHT / 45;
-export const ATTACKBOX_WIDTH = 120;
-export const ATTACKBOX_HEIGHT = -100;
-export const MOVE_SPEED = CANVAS_WIDTH / 275;
-export const ATTACK_FRAMES = 7;
-export const SLIP_SPEED = 1;
-export const groundLvl = 600;
-let render = false;
-let player1_actionIndex = 0;
-let player2_actionIndex = 0;
-let qTable = null;
-// ==========================
-// Imports
-// ==========================
-/*
 import { Chart, registerables } from "chart.js";
 import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 import * as fs from "node:fs";
 import * as SDL from "@kmamal/sdl";
 import ndarray from "ndarray";
 import _ from "lodash";
-
- */
-import ndarray from "https://esm.sh/ndarray@1.0.19";
-import _ from "https://esm.sh/lodash@4.17.21";
-
-import { Fighter, setFighterData } from "./fighterClass.js";
 import {
+  action,
+  actionPlayer2,
+  actions,
+  decisionMaking,
+  discretizeByDiv,
+  getBestActionAndValue,
+  groundLvl,
+  offsetY,
+  relativePosition,
+  sizeX1,
+  sizeX2,
+  sizeY1,
+  sizeY2,
+  resolveVerticalCollisionBetweenFighters,
+  updateHorizontalMovement,
+  rectangularCollision,
   determineDamage,
   determineWinner,
-  rectangularCollision,
-  updateHorizontalMovement,
-  resolveVerticalCollisionBetweenFighters,
-} from "./aiUtils.js";
-// ==========================
-// VIEW
-// ==========================
-/*
+  CANVAS_WIDTH,
+  CANVAS_HEIGHT,
+} from "./trainingUtils.js";
+import { Fighter, setFighterData } from "./fighterClass.js";
+
+export const gravity = 0.5;
+let render = false;
+let player1_actionIndex = 0;
+let player2_actionIndex = 0;
+let qTable = null;
+
+const keys = {
+  s: { pressed: false },
+  a: { pressed: false },
+  d: { pressed: false },
+  ArrowLeft: { pressed: false },
+  ArrowRight: { pressed: false },
+  ArrowDown: { pressed: false },
+};
+
 const window = SDL.video.createWindow({
   title: "Spiel",
   width: CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
 });
 
- */
+// ==========================
+// Player SetupJUMP_VELOCITY
+// ==========================
+const player1 = new Fighter({
+  position: { x: CANVAS_WIDTH * 0.25, y: CANVAS_HEIGHT / 5 },
+  velocity: { x: 0, y: 0 },
+});
+
+const player2 = new Fighter({
+  position: { x: CANVAS_WIDTH * 0.75, y: CANVAS_HEIGHT / 5 },
+  velocity: { x: 0, y: 0 },
+});
+
+// ==========================
+// Game Initialization
+// ==========================
+async function initializeGame() {
+  await Promise.all([
+    setFighterData(player1, false),
+    setFighterData(player2, true),
+    determineDamage(player1),
+    determineDamage(player2),
+  ]);
+}
+
+// ==========================
+// Collision & Damage Handling
+// ==========================
+function processAttackCollision(attacker, defender) {
+  if (
+    attacker.isAttacking &&
+    !attacker.hitLanded &&
+    attacker.framesCurrent >= attacker.attackFrames / 2 &&
+    rectangularCollision(attacker, defender)
+  ) {
+    defender.takeHit(attacker.damage);
+  }
+
+  // Reset attack state when animation completes
+  if (
+    attacker.isAttacking &&
+    attacker.framesCurrent >= attacker.attackFrames - 1
+  ) {
+    attacker.isAttacking = false;
+    attacker.hitLanded = false;
+  }
+}
+
+// ==========================
+// Animation Loop
+// ==========================e
+
+async function animate() {
+  await action(player1_actionIndex, keys, player1);
+  await actionPlayer2(player2_actionIndex, keys, player2);
+  player1.update(groundLvl, gravity);
+  player2.update(groundLvl, gravity);
+  if (player1.position.x < player2.position.x) {
+    player1.flip = player1.dead ? player1.flip : false;
+    player2.flip = player2.dead ? player2.flip : true;
+  } else {
+    player1.flip = player1.dead ? player1.flip : true;
+    player2.flip = player2.dead ? player2.flip : false;
+  }
+
+  player1.velocity.x = 0;
+  player2.velocity.x = 0;
+
+  resolveVerticalCollisionBetweenFighters(player1, player2);
+  resolveVerticalCollisionBetweenFighters(player2, player1);
+  updateHorizontalMovement(
+    player1,
+    player2,
+    keys.a.pressed,
+    keys.d.pressed,
+    "a",
+    "d",
+  );
+  updateHorizontalMovement(
+    player2,
+    player1,
+    keys.ArrowLeft.pressed,
+    keys.ArrowRight.pressed,
+    "ArrowLeft",
+    "ArrowRight",
+  );
+  if (render) {
+    await renderFrame(player1, player2);
+  }
+  processAttackCollision(player1, player2);
+  processAttackCollision(player2, player1);
+
+  if (player1.health <= 0 || player2.health <= 0) {
+    determineWinner(player1, player2);
+  }
+}
+
+function initializeQTable() {
+  const dataLength = sizeX1 * (sizeY1 + offsetY) * sizeX2 * sizeY2 * actions;
+  const bufferAI = new Float64Array(dataLength);
+  qTable = ndarray(bufferAI, [
+    sizeX1,
+    sizeY1 + offsetY,
+    sizeX2,
+    sizeY2,
+    actions,
+  ]);
+  for (let x1 = 0; x1 < sizeX1; x1++) {
+    for (let y1 = 0; y1 < sizeY1 + offsetY; y1++) {
+      for (let x2 = 0; x2 < sizeX2; x2++) {
+        for (let y2 = 0; y2 < sizeY2; y2++) {
+          for (let i = 0; i < actions; i++) {
+            if (i === 3) {
+              qTable.set(x1, y1, x2, y2, i, -10);
+            } else {
+              qTable.set(x1, y1, x2, y2, i, Math.random() * 0.01);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const now = new Date();
+const timestamp =
+  [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("") +
+  "_" +
+  [
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+function saveQTable(qTable) {
+  const fileName = `qtable_${timestamp}.bin`;
+  const flat = qTable.data;
+  // eslint-disable-next-line no-undef
+  const buffer = Buffer.from(flat.buffer);
+  fs.writeFileSync(fileName, buffer);
+  console.log("✅ Q-Tabelle gespeichert in qtable.bin");
+}
+
+export function loadQTable(url) {
+  console.log("Q-Tabelle wird geladen...");
+  const bufferFile = fs.readFileSync(url);
+  const dataArray = new Float64Array(
+    bufferFile.buffer,
+    bufferFile.byteOffset,
+    bufferFile.byteLength / Float64Array.BYTES_PER_ELEMENT,
+  );
+  qTable = ndarray(dataArray, [
+    2 * sizeX1 - 1,
+    2 * sizeY1 - 1,
+    sizeX2,
+    sizeY2,
+    actions,
+  ]);
+}
+// ==========================
+// AI
+// ==========================
+const HM_EPISODES = 44000;
+const MOVE_PENALTY = 0.3;
+const HURT_PENALTY = 2;
+const DEAD_PENALTY = 21;
+const BLOCK_REWARD = 1;
+const HIT_REWARD = 10;
+const KILL_REWARD = 20;
+const NEAR_REWARD = 1.9;
+let epsilon = 0.9;
+const EPS_DECAY = 0.99995;
+const SHOW_EVERY = 20000;
+const start_q_table = "qtable_20250616_113118.bin";
+const LEARNING_RATE = 0.1;
+const DISCOUNT = 0.97;
 
 const rawBuffer = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT * 3);
 
@@ -128,6 +311,7 @@ async function renderFrame(playerOne, playerTwo) {
         0,
       );
     }
+    // eslint-disable-next-line no-undef
     const nodeBuffer = Buffer.from(rawBuffer);
     window.render(
       CANVAS_WIDTH,
@@ -141,297 +325,6 @@ async function renderFrame(playerOne, playerTwo) {
   } catch (error) {
     console.log(error);
   }
-}
-// ==========================
-// Input Tracking
-// ==========================
-// 0 = s / block
-// 1 = a / left
-// 2 = d / right
-// 3 = w / jump
-// 4 = 1 / attack
-const keys = {
-  s: { pressed: false },
-  a: { pressed: false },
-  d: { pressed: false },
-  ArrowLeft: { pressed: false },
-  ArrowRight: { pressed: false },
-  ArrowDown: { pressed: false },
-};
-
-// ==========================
-// Player SetupJUMP_VELOCITY
-// ==========================
-const player1 = new Fighter({
-  position: { x: CANVAS_WIDTH * 0.25, y: CANVAS_HEIGHT / 5 },
-  velocity: { x: 0, y: 0 },
-});
-
-const player2 = new Fighter({
-  position: { x: CANVAS_WIDTH * 0.75, y: CANVAS_HEIGHT / 5 },
-  velocity: { x: 0, y: 0 },
-});
-// ==========================
-// Game Initialization
-// ==========================
-async function initializeGame() {
-  await Promise.all([
-    setFighterData(player1, false),
-    setFighterData(player2, true),
-    determineDamage(player1),
-    determineDamage(player2),
-  ]);
-}
-// ==========================
-// Collision & Damage Handling
-// ==========================
-function processAttackCollision(attacker, defender) {
-  if (
-    attacker.isAttacking &&
-    !attacker.hitLanded &&
-    attacker.framesCurrent >= attacker.attackFrames / 2 &&
-    rectangularCollision(attacker, defender)
-  ) {
-    defender.takeHit(attacker.damage);
-  }
-
-  // Reset attack state when animation completes
-  if (
-    attacker.isAttacking &&
-    attacker.framesCurrent >= attacker.attackFrames - 1
-  ) {
-    attacker.isAttacking = false;
-    attacker.hitLanded = false;
-  }
-}
-
-// ==========================
-// Animation Loop
-// ==========================e
-
-async function animate() {
-  await action(player1_actionIndex, keys, player1);
-  await actionPlayer2(player2_actionIndex, keys, player2);
-  player1.update(groundLvl, gravity);
-  player2.update(groundLvl, gravity);
-  if (player1.position.x < player2.position.x) {
-    player1.flip = player1.dead ? player1.flip : false;
-    player2.flip = player2.dead ? player2.flip : true;
-  } else {
-    player1.flip = player1.dead ? player1.flip : true;
-    player2.flip = player2.dead ? player2.flip : false;
-  }
-
-  player1.velocity.x = 0;
-  player2.velocity.x = 0;
-
-  resolveVerticalCollisionBetweenFighters(player1, player2);
-  resolveVerticalCollisionBetweenFighters(player2, player1);
-  updateHorizontalMovement(
-    player1,
-    player2,
-    keys.a.pressed,
-    keys.d.pressed,
-    "a",
-    "d",
-  );
-  updateHorizontalMovement(
-    player2,
-    player1,
-    keys.ArrowLeft.pressed,
-    keys.ArrowRight.pressed,
-    "ArrowLeft",
-    "ArrowRight",
-  );
-  if (render) {
-    await renderFrame(player1, player2);
-  }
-  processAttackCollision(player1, player2);
-  processAttackCollision(player2, player1);
-
-  if (player1.health <= 0 || player2.health <= 0) {
-    determineWinner(player1, player2);
-  }
-}
-// ==========================
-// AI
-// ==========================
-const HM_EPISODES = 44000;
-const MOVE_PENALTY = 0.3;
-const HURT_PENALTY = 2;
-const DEAD_PENALTY = 21;
-const BLOCK_REWARD = 1;
-const HIT_REWARD = 10;
-const KILL_REWARD = 20;
-const NEAR_REWARD = 1.9;
-let epsilon = 0.9;
-const EPS_DECAY = 0.99995;
-const SHOW_EVERY = 20000;
-const start_q_table = "qtable_20250614_150937.bin";
-const LEARNING_RATE = 0.1;
-const DISCOUNT = 0.97;
-
-export function relativePosition(player1, player2) {
-  if (rectangularCollision(player1, player2)) {
-    return 1;
-  }
-  if (player1.position.x > player2.position.x + player2.width) {
-    return 2;
-  }
-  if (player1.position.x + player1.width < player2.position.x) {
-    return 0;
-  }
-  return 0;
-}
-
-export function discretizeByDiv(value) {
-  return Math.round(value / DIVISOR);
-}
-const DIVISOR = CANVAS_HEIGHT;
-const sizeX1 = 3;
-const sizeY1 = discretizeByDiv(CANVAS_HEIGHT); // Height of playing field
-const sizeX2 = 2; // On the ground or not
-const sizeY2 = 2; // Enemy is attacking?
-const offsetY = sizeY1;
-const actions = 5;
-
-export function getBestActionAndValue(qAction_Table, x1, y1, x2, y2) {
-  let maxIndex = 0;
-  let maxValue = qAction_Table.get(x1, y1, x2, y2, 0);
-
-  let secondMaxIndex = -1;
-  let secondMaxValue = -Infinity;
-
-  for (let i = 1; i < actions; i++) {
-    let val = qAction_Table.get(x1, y1, x2, y2, i);
-    if (val > maxValue) {
-      secondMaxValue = maxValue;
-      secondMaxIndex = maxIndex;
-
-      maxValue = val;
-      maxIndex = i;
-    } else if (val > secondMaxValue) {
-      secondMaxValue = val;
-      secondMaxIndex = i;
-    }
-  }
-
-  return { maxIndex, maxValue, secondMaxIndex, secondMaxValue };
-}
-
-function initializeQTable() {
-  const dataLength = sizeX1 * (sizeY1 + offsetY) * sizeX2 * sizeY2 * actions;
-  const bufferAI = new Float64Array(dataLength);
-  qTable = ndarray(bufferAI, [
-    sizeX1,
-    sizeY1 + offsetY,
-    sizeX2,
-    sizeY2,
-    actions,
-  ]);
-  for (let x1 = 0; x1 < sizeX1; x1++) {
-    for (let y1 = 0; y1 < sizeY1 + offsetY; y1++) {
-      for (let x2 = 0; x2 < sizeX2; x2++) {
-        for (let y2 = 0; y2 < sizeY2; y2++) {
-          for (let i = 0; i < actions; i++) {
-            if (i === 3) {
-              qTable.set(x1, y1, x2, y2, i, -10);
-            } else {
-              qTable.set(x1, y1, x2, y2, i, Math.random() * 0.01);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-const now = new Date();
-const timestamp =
-  [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("") +
-  "_" +
-  [
-    String(now.getHours()).padStart(2, "0"),
-    String(now.getMinutes()).padStart(2, "0"),
-    String(now.getSeconds()).padStart(2, "0"),
-  ].join("");
-
-function saveQTable(qTable) {
-  const fileName = `qtable_${timestamp}.bin`;
-  const flat = qTable.data;
-  const buffer = Buffer.from(flat.buffer);
-  fs.writeFileSync(fileName, buffer);
-  console.log("✅ Q-Tabelle gespeichert in qtable.bin");
-}
-
-export async function loadQTableFromURL(url) {
-  const shape = [sizeX1, sizeY1 + offsetY, sizeX2, sizeY2, actions];
-  const totalElements = shape.reduce((a, b) => a * b);
-
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(
-      `❌ Datei konnte nicht geladen werden: ${response.status} ${response.statusText}`,
-    );
-  }
-  const buffer = await response.arrayBuffer();
-
-  const floatArray = new Float64Array(buffer);
-  /*if (floatArray.length !== totalElements) {
-    throw new Error(
-      `❌ Datenlänge stimmt nicht. Erwartet ${totalElements}, erhalten ${floatArray.length}`,
-    );
-  }
-
-   */
-  return ndarray(floatArray, shape);
-}
-
-/*
-export function loadQTable(url) {
-  console.log("Q-Tabelle wird geladen...");
-  const bufferFile = fs.readFileSync(url);
-  const dataArray = new Float64Array(
-    bufferFile.buffer,
-    bufferFile.byteOffset,
-    bufferFile.byteLength / Float64Array.BYTES_PER_ELEMENT,
-  );
-  qTable = ndarray(dataArray, [
-    2 * sizeX1 - 1,
-    2 * sizeY1 - 1,
-    sizeX2,
-    sizeY2,
-    actions,
-  ]);
-}
-
- */
-
-export function decisionMaking(qDecisionTable, playerOne, playerTwo) {
-  let distanceX = relativePosition(playerOne, playerTwo);
-  let distanceY =
-    discretizeByDiv(playerOne.position.y - playerTwo.position.y) + offsetY;
-  let onGround = Number(playerOne.position.y <= groundLvl);
-  let enemyAttacking = Number(playerTwo.isAttacking);
-  let aiAction = getBestActionAndValue(
-    qDecisionTable,
-    distanceX,
-    distanceY,
-    onGround,
-    enemyAttacking,
-  );
-  return {
-    secondIndex: aiAction.secondIndex,
-    index: aiAction.maxIndex,
-    distanceX: distanceX,
-    distanceY: distanceY,
-    onGround: onGround,
-    enemyAttacking: enemyAttacking,
-  };
 }
 
 async function train() {
@@ -565,7 +458,6 @@ async function train() {
   saveQTable(qTable);
 }
 
-/*
 async function makeChart(episoderewards) {
   Chart.register(...registerables);
   const width = 800;
@@ -582,13 +474,11 @@ async function makeChart(episoderewards) {
     sampleEvery,
   );
 
-  // 2) Berechne den gleitenden Durchschnitt nur an diesen Indizes
   const moving_avg = sampleIndices.map((i) => {
     const slice = episoderewards.slice(Math.max(0, i - windowSize + 1), i + 1);
     return _.mean(slice);
   });
 
-  // 3) Labels = die originalen Episoden-Indizes der Sample-Punkte
   const labels = sampleIndices;
 
   const chartConfig = {
@@ -619,100 +509,6 @@ async function makeChart(episoderewards) {
   console.log("Chart saved");
 }
 
-
- */
-//bis hier
-
-// ==========================
-// Controls
-// ==========================
-export async function action(choice, keys, player) {
-  keys.s.pressed = false;
-  keys.a.pressed = false;
-  keys.d.pressed = false;
-  player.isBlocking = false;
-  player.lastKey = null;
-
-  if (!player.dead) {
-    switch (choice) {
-      case 0:
-        keys.s.pressed = true;
-        player.lastKey = "s";
-        player.isBlocking = true;
-        break;
-      case 1:
-        keys.a.pressed = true;
-        player.lastKey = "a";
-        break;
-      case 2:
-        keys.d.pressed = true;
-        player.lastKey = "d";
-        break;
-      case 3:
-        if (player.dead || player.isBlocking) return;
-        if (player.position.y + player.height >= groundLvl) {
-          player.velocity.y = -JUMP_VELOCITY;
-        }
-        break;
-      case 4:
-        if (!player.isAttacking) {
-          player.attack();
-          await determineDamage(player);
-          player.attackFrames = 7;
-          player.framesMax = 7;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-}
-
-export async function actionPlayer2(choice, keys, player) {
-  keys.ArrowDown.pressed = false;
-  keys.ArrowLeft.pressed = false;
-  keys.ArrowRight.pressed = false;
-  player.isBlocking = false;
-  player.lastKey = null;
-
-  if (!player.dead) {
-    switch (choice) {
-      case 0:
-        keys.ArrowDown.pressed = true;
-        player.lastKey = "ArrowDown";
-        player.isBlocking = true;
-        break;
-      case 1:
-        keys.ArrowLeft.pressed = true;
-        player.lastKey = "ArrowLeft";
-        break;
-      case 2:
-        keys.ArrowRight.pressed = true;
-        player.lastKey = "ArrowRight";
-        break;
-      case 3:
-        if (player.dead || player.isBlocking) return;
-        if (player.position.y + player.height >= groundLvl) {
-          player.velocity.y = -JUMP_VELOCITY;
-        }
-        break;
-      case 4:
-        if (!player.isAttacking) {
-          //player.attackStyle = "style1";
-          player.attack();
-          player.attackbox = player.sprites.attack1.attackBox;
-          player.framesMax = player.sprites.attack1.framesMax;
-          console.log(player.framesMax);
-          console.log(player.attackFrames);
-          await determineDamage(player);
-          console.log(player.damage);
-        }
-        break;
-      default:
-        break;
-    }
-  }
-}
 async function gameLoop() {
   render = true;
   loadQTable(start_q_table);
@@ -721,7 +517,7 @@ async function gameLoop() {
     await initializeGame();
     for (let i = 0; i < 2000 && !player1.dead && !player2.dead; i++) {
       let player1_action = decisionMaking(qTable, player1, player2);
-      let player2_action = decisionMaking(qTable, player2, player1);
+      //let player2_action = decisionMaking(qTable, player2, player1);
 
       player1_actionIndex = player1_action.index;
       do {
@@ -731,4 +527,5 @@ async function gameLoop() {
     }
   }
 }
-
+train();
+gameLoop();
