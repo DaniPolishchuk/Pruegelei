@@ -33,7 +33,9 @@ aiButton.style.position = "absolute";
 aiButton.style.top = "5vh";
 aiButton.style.right = "20vh";
 
-// SessionStorage lesen & setzen
+// ==========================
+// AI toggle button
+// ==========================
 const savedAI = sessionStorage.getItem("aiEnabled") === "true";
 if (savedAI) {
   aiButton.classList.add("active");

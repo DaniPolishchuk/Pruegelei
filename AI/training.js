@@ -98,138 +98,8 @@ function processAttackCollision(attacker, defender) {
 }
 
 // ==========================
-// Animation Loop
-// ==========================e
-
-async function animate() {
-  await action(player1_actionIndex, keys, player1);
-  await actionPlayer2(player2_actionIndex, keys, player2);
-  player1.update(groundLvl, gravity);
-  player2.update(groundLvl, gravity);
-  if (player1.position.x < player2.position.x) {
-    player1.flip = player1.dead ? player1.flip : false;
-    player2.flip = player2.dead ? player2.flip : true;
-  } else {
-    player1.flip = player1.dead ? player1.flip : true;
-    player2.flip = player2.dead ? player2.flip : false;
-  }
-
-  player1.velocity.x = 0;
-  player2.velocity.x = 0;
-
-  resolveVerticalCollisionBetweenFighters(player1, player2);
-  resolveVerticalCollisionBetweenFighters(player2, player1);
-  updateHorizontalMovement(
-    player1,
-    player2,
-    keys.a.pressed,
-    keys.d.pressed,
-    "a",
-    "d",
-  );
-  updateHorizontalMovement(
-    player2,
-    player1,
-    keys.ArrowLeft.pressed,
-    keys.ArrowRight.pressed,
-    "ArrowLeft",
-    "ArrowRight",
-  );
-  if (render) {
-    await renderFrame(player1, player2);
-  }
-  processAttackCollision(player1, player2);
-  processAttackCollision(player2, player1);
-
-  if (player1.health <= 0 || player2.health <= 0) {
-    determineWinner(player1, player2);
-  }
-}
-
-function initializeQTable() {
-  const dataLength = sizeX1 * (sizeY1 + offsetY) * sizeX2 * sizeY2 * actions;
-  const bufferAI = new Float64Array(dataLength);
-  qTable = ndarray(bufferAI, [
-    sizeX1,
-    sizeY1 + offsetY,
-    sizeX2,
-    sizeY2,
-    actions,
-  ]);
-  for (let x1 = 0; x1 < sizeX1; x1++) {
-    for (let y1 = 0; y1 < sizeY1 + offsetY; y1++) {
-      for (let x2 = 0; x2 < sizeX2; x2++) {
-        for (let y2 = 0; y2 < sizeY2; y2++) {
-          for (let i = 0; i < actions; i++) {
-            if (i === 3) {
-              qTable.set(x1, y1, x2, y2, i, -10);
-            } else {
-              qTable.set(x1, y1, x2, y2, i, Math.random() * 0.01);
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-const now = new Date();
-const timestamp =
-  [
-    now.getFullYear(),
-    String(now.getMonth() + 1).padStart(2, "0"),
-    String(now.getDate()).padStart(2, "0"),
-  ].join("") +
-  "_" +
-  [
-    String(now.getHours()).padStart(2, "0"),
-    String(now.getMinutes()).padStart(2, "0"),
-    String(now.getSeconds()).padStart(2, "0"),
-  ].join("");
-
-function saveQTable(qTable) {
-  const fileName = `qtable_${timestamp}.bin`;
-  const flat = qTable.data;
-  // eslint-disable-next-line no-undef
-  const buffer = Buffer.from(flat.buffer);
-  fs.writeFileSync(fileName, buffer);
-  console.log("✅ Q-Tabelle gespeichert in qtable.bin");
-}
-
-export function loadQTable(url) {
-  console.log("Q-Tabelle wird geladen...");
-  const bufferFile = fs.readFileSync(url);
-  const dataArray = new Float64Array(
-    bufferFile.buffer,
-    bufferFile.byteOffset,
-    bufferFile.byteLength / Float64Array.BYTES_PER_ELEMENT,
-  );
-  qTable = ndarray(dataArray, [
-    2 * sizeX1 - 1,
-    2 * sizeY1 - 1,
-    sizeX2,
-    sizeY2,
-    actions,
-  ]);
-}
+// Render Functions
 // ==========================
-// AI
-// ==========================
-const HM_EPISODES = 44000;
-const MOVE_PENALTY = 0.3;
-const HURT_PENALTY = 2;
-const DEAD_PENALTY = 21;
-const BLOCK_REWARD = 1;
-const HIT_REWARD = 10;
-const KILL_REWARD = 20;
-const NEAR_REWARD = 1.9;
-let epsilon = 0.9;
-const EPS_DECAY = 0.99995;
-const SHOW_EVERY = 20000;
-const start_q_table = "qtable_20250616_113118.bin";
-const LEARNING_RATE = 0.1;
-const DISCOUNT = 0.97;
-
 const rawBuffer = new Uint8Array(CANVAS_WIDTH * CANVAS_HEIGHT * 3);
 
 function drawRectangle(xE, yE, w, h, r, g, b) {
@@ -326,6 +196,161 @@ async function renderFrame(playerOne, playerTwo) {
     console.log(error);
   }
 }
+
+// ==========================
+// Animation Loop
+// ==========================
+async function animate() {
+  await action(player1_actionIndex, keys, player1);
+  await actionPlayer2(player2_actionIndex, keys, player2);
+  player1.update(groundLvl, gravity);
+  player2.update(groundLvl, gravity);
+  if (player1.position.x < player2.position.x) {
+    player1.flip = player1.dead ? player1.flip : false;
+    player2.flip = player2.dead ? player2.flip : true;
+  } else {
+    player1.flip = player1.dead ? player1.flip : true;
+    player2.flip = player2.dead ? player2.flip : false;
+  }
+
+  player1.velocity.x = 0;
+  player2.velocity.x = 0;
+
+  resolveVerticalCollisionBetweenFighters(player1, player2);
+  resolveVerticalCollisionBetweenFighters(player2, player1);
+  updateHorizontalMovement(
+    player1,
+    player2,
+    keys.a.pressed,
+    keys.d.pressed,
+    "a",
+    "d",
+  );
+  updateHorizontalMovement(
+    player2,
+    player1,
+    keys.ArrowLeft.pressed,
+    keys.ArrowRight.pressed,
+    "ArrowLeft",
+    "ArrowRight",
+  );
+  if (render) {
+    await renderFrame(player1, player2);
+  }
+  processAttackCollision(player1, player2);
+  processAttackCollision(player2, player1);
+
+  if (player1.health <= 0 || player2.health <= 0) {
+    determineWinner(player1, player2);
+  }
+}
+
+async function gameLoop() {
+  render = true;
+  loadQTable(start_q_table);
+
+  for (let i = 0; i < 1000000; i++) {
+    await initializeGame();
+    for (let i = 0; i < 2000 && !player1.dead && !player2.dead; i++) {
+      let player1_action = decisionMaking(qTable, player1, player2);
+      //let player2_action = decisionMaking(qTable, player2, player1);
+
+      player1_actionIndex = player1_action.index;
+      do {
+        player2_actionIndex = Math.floor(Math.random() * actions);
+      } while (player2_actionIndex === 3 || player2_actionIndex === 0);
+      await animate();
+    }
+  }
+}
+
+// ==========================
+// QTable Functions
+// ==========================
+function initializeQTable() {
+  const dataLength = sizeX1 * (sizeY1 + offsetY) * sizeX2 * sizeY2 * actions;
+  const bufferAI = new Float64Array(dataLength);
+  qTable = ndarray(bufferAI, [
+    sizeX1,
+    sizeY1 + offsetY,
+    sizeX2,
+    sizeY2,
+    actions,
+  ]);
+  for (let x1 = 0; x1 < sizeX1; x1++) {
+    for (let y1 = 0; y1 < sizeY1 + offsetY; y1++) {
+      for (let x2 = 0; x2 < sizeX2; x2++) {
+        for (let y2 = 0; y2 < sizeY2; y2++) {
+          for (let i = 0; i < actions; i++) {
+            if (i === 3) {
+              qTable.set(x1, y1, x2, y2, i, -10);
+            } else {
+              qTable.set(x1, y1, x2, y2, i, Math.random() * 0.01);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+const now = new Date();
+const timestamp =
+  [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, "0"),
+    String(now.getDate()).padStart(2, "0"),
+  ].join("") +
+  "_" +
+  [
+    String(now.getHours()).padStart(2, "0"),
+    String(now.getMinutes()).padStart(2, "0"),
+    String(now.getSeconds()).padStart(2, "0"),
+  ].join("");
+
+function saveQTable(qTable) {
+  const fileName = `qtable_${timestamp}.bin`;
+  const flat = qTable.data;
+  // eslint-disable-next-line no-undef
+  const buffer = Buffer.from(flat.buffer);
+  fs.writeFileSync(fileName, buffer);
+  console.log("✅ Q-Tabelle gespeichert in qtable.bin");
+}
+
+export function loadQTable(url) {
+  console.log("Q-Tabelle wird geladen...");
+  const bufferFile = fs.readFileSync(url);
+  const dataArray = new Float64Array(
+    bufferFile.buffer,
+    bufferFile.byteOffset,
+    bufferFile.byteLength / Float64Array.BYTES_PER_ELEMENT,
+  );
+  qTable = ndarray(dataArray, [
+    2 * sizeX1 - 1,
+    2 * sizeY1 - 1,
+    sizeX2,
+    sizeY2,
+    actions,
+  ]);
+}
+
+// ==========================
+// AI
+// ==========================
+const HM_EPISODES = 44000;
+const MOVE_PENALTY = 0.3;
+const HURT_PENALTY = 2;
+const DEAD_PENALTY = 21;
+const BLOCK_REWARD = 1;
+const HIT_REWARD = 10;
+const KILL_REWARD = 20;
+const NEAR_REWARD = 1.9;
+let epsilon = 0.9;
+const EPS_DECAY = 0.99995;
+const SHOW_EVERY = 20000;
+const start_q_table = "qtable_20250616_113118.bin";
+const LEARNING_RATE = 0.1;
+const DISCOUNT = 0.97;
 
 async function train() {
   let player1_deaths = 0;
@@ -458,6 +483,9 @@ async function train() {
   saveQTable(qTable);
 }
 
+// ==========================
+// Charts
+// ==========================
 async function makeChart(episoderewards) {
   Chart.register(...registerables);
   const width = 800;
@@ -509,23 +537,5 @@ async function makeChart(episoderewards) {
   console.log("Chart saved");
 }
 
-async function gameLoop() {
-  render = true;
-  loadQTable(start_q_table);
-
-  for (let i = 0; i < 1000000; i++) {
-    await initializeGame();
-    for (let i = 0; i < 2000 && !player1.dead && !player2.dead; i++) {
-      let player1_action = decisionMaking(qTable, player1, player2);
-      //let player2_action = decisionMaking(qTable, player2, player1);
-
-      player1_actionIndex = player1_action.index;
-      do {
-        player2_actionIndex = Math.floor(Math.random() * actions);
-      } while (player2_actionIndex === 3 || player2_actionIndex === 0);
-      await animate();
-    }
-  }
-}
 train();
 gameLoop();
