@@ -39,6 +39,7 @@ if (savedAI) {
   aiButton.classList.add("active");
 }
 
+sessionStorage.setItem("ai", "false");
 aiButton.addEventListener("click", () => {
   aiButton.classList.toggle("active");
   const isActive = aiButton.classList.contains("active");
