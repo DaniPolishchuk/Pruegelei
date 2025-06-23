@@ -36,7 +36,7 @@ import {
 // Socket connection
 // ==========================
 // eslint-disable-next-line no-undef
-const socket = io();
+const socket = io('https://pruegelei.onrender.com');
 const room = sessionStorage.getItem("room");
 const clientId = localStorage.getItem("clientId");
 socket.emit("joinRoom", { roomName: room, clientId });
