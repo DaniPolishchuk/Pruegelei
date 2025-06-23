@@ -71,7 +71,7 @@ socket.on("roomJoined", ({ room, playerAssignments }) => {
   const our = playerAssignments.find((p) => p.clientId === clientId);
   sessionStorage.setItem("room", room);
   sessionStorage.setItem("playerId", our.playerId);
-  window.location.href = "/fighterSelection";
+  window.location.href = "/fighterSelection/";
 });
 
 socket.on("error", (msg) => alert(msg));
@@ -94,5 +94,5 @@ joinBtn.onclick = () => {
 document.getElementById("localModeBtn").onclick = () => {
   sessionStorage.setItem("room", "local");
   sessionStorage.setItem("playerId", 1);
-  window.location.href = "/fighterSelectionL";
+  window.location.href = "/fighterSelectionL/";
 };

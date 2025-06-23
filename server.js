@@ -12,12 +12,8 @@ import process from "node:process";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*", 
-    methods: ["GET", "POST"]
-  }
-});const db = new Database("Fighters.db");
+const io = new Server(server);
+const db = new Database("Fighters.db");
 
 // ==========================
 // Utility

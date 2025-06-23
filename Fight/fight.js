@@ -36,7 +36,7 @@ import {
 // Socket connection
 // ==========================
 // eslint-disable-next-line no-undef
-const socket = io('https://pruegelei.onrender.com');
+const socket = io();
 const room = sessionStorage.getItem("room");
 const clientId = localStorage.getItem("clientId");
 socket.emit("joinRoom", { roomName: room, clientId });
@@ -377,6 +377,16 @@ function animate() {
 
   if ((player1.health <= 0 || player2.health <= 0) && !rematchRequested) {
     rematchRequested = true;
+    if (player1.health <= 0) {
+      player1.switchSprite("death");
+      player1.dead = true;
+    } else {
+      player2.switchSprite("death");
+      player2.dead = true;
+    }
+    offscreenCtx.restore();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(offscreenCanvas, 0, 0);
     determineWinner(player1, player2);
     socket.emit("requestRematch", { roomName: room });
     offscreenCtx.restore();

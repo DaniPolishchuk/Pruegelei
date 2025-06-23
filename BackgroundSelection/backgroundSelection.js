@@ -18,7 +18,7 @@ import { MiniFighter } from "../classes.js";
 // Session & Socket Setup
 // ==========================
 // eslint-disable-next-line no-undef
-const socket = io('https://pruegelei.onrender.com');
+const socket = io();
 const room = sessionStorage.getItem("room");
 const clientId = localStorage.getItem("clientId");
 const myId = Number(sessionStorage.getItem("playerId"));
@@ -109,7 +109,7 @@ socket.on("gameStart", ({ background }) => {
     ctx.drawImage(chosenImg, 0, 0, W, H);
 
     setTimeout(() => {
-      window.location.href = "/fight";
+      window.location.href = "/fight/";
     }, 500);
   }, 5000);
 });

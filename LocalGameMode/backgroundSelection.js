@@ -77,7 +77,7 @@ function startRandomPick(duration = 5000, intervalTime = 150) {
   }, duration);
 
   setTimeout(() => {
-    window.location.href = "/fightL";
+    window.location.href = "/fightL/";
   }, duration + 500);
 }
 

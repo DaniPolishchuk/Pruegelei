@@ -167,7 +167,7 @@ window.addEventListener("pageshow", () => {
 function startBgPicking() {
   sessionStorage.setItem("player1", player1.name);
   sessionStorage.setItem("player2", player2.name);
-  window.location.href = "/backgroundL";
+  window.location.href = "/backgroundL/";
 }
 
 // ==========================

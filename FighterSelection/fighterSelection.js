@@ -34,7 +34,7 @@ const allFighters = [];
 let myId = null;
 
 // eslint-disable-next-line no-undef
-const socket = io('https://pruegelei.onrender.com');
+const socket = io();
 let clientId = localStorage.getItem("clientId");
 if (!clientId) {
   clientId = Date.now() + "_" + Math.random().toString(36).slice(2);
@@ -180,7 +180,7 @@ function startBgPicking() {
 }
 
 socket.on("gameStart", () => {
-  window.location.href = "/background";
+  window.location.href = "/background/";
 });
 
 readyButton1.addEventListener("click", () => toggleReady(1));
