@@ -20,6 +20,8 @@ const MOVE_SPEED = canvas?.width / 275;
 const SLIP_SPEED = 1;
 export const JUMP_VELOCITY = canvas?.height / 45;
 export const gravity = 0.5;
+const avgSurface = await getAvgAttackSurface();
+const avgFramesCount = await getAvgAttackFramesCount();
 
 // ==============================
 // UI Elements
@@ -598,8 +600,6 @@ async function getAvgAttackFramesCount() {
 }
 
 export async function determineDamage(player) {
-  const avgSurface = await getAvgAttackSurface();
-  const avgFramesCount = await getAvgAttackFramesCount();
   if (!avgSurface || !avgFramesCount) {
     player.damage = 0;
     return;

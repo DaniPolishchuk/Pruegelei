@@ -182,7 +182,7 @@ let prevGp2Attack = false;
 let qTable;
 const epsilon = 0.1;
 
-async function animate() {
+function animate() {
   requestAnimationFrame(animate);
   if (isPaused) return;
 
@@ -202,9 +202,9 @@ async function animate() {
     if (ai) {
       let agentAction = decisionMaking(qTable, player2, player1);
       if (Math.random() > epsilon) {
-        await actionPlayer2(agentAction.index, keys, player2);
+        actionPlayer2(agentAction.index, keys, player2);
       } else {
-        await actionPlayer2(agentAction.secondIndex, keys, player2);
+        actionPlayer2(agentAction.secondIndex, keys, player2);
       }
     }
   }

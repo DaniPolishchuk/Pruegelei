@@ -2,24 +2,24 @@
 // Imports
 // ==========================
 import ndarray from "https://esm.sh/ndarray@1.0.19";
-import { rectangularCollision } from "../utils.js";
+import { determineDamage, rectangularCollision } from "../utils.js";
 
-export const CANVAS_HEIGHT = 720;
+const CANVAS_HEIGHT = 720;
 const DIVISOR = CANVAS_HEIGHT;
-export const JUMP_VELOCITY = CANVAS_HEIGHT / 45;
-export const groundLvl = 600;
-export const sizeX1 = 3;
-export const sizeY1 = discretizeByDiv(CANVAS_HEIGHT); // Height of playing field
-export const sizeX2 = 2; // On the ground or not
-export const sizeY2 = 2; // Enemy is attacking?
-export const offsetY = sizeY1;
-export const actions = 5;
+const JUMP_VELOCITY = CANVAS_HEIGHT / 45;
+const groundLvl = 600;
+const sizeX1 = 3;
+const sizeY1 = discretizeByDiv(CANVAS_HEIGHT); // Height of playing field
+const sizeX2 = 2; // On the ground or not
+const sizeY2 = 2; // Enemy is attacking?
+const offsetY = sizeY1;
+const actions = 5;
 
-export function discretizeByDiv(value) {
+function discretizeByDiv(value) {
   return Math.round(value / DIVISOR);
 }
 
-export function getBestActionAndValue(qAction_Table, x1, y1, x2, y2) {
+function getBestActionAndValue(qAction_Table, x1, y1, x2, y2) {
   let maxIndex = 0;
   let maxValue = qAction_Table.get(x1, y1, x2, y2, 0);
 
@@ -58,7 +58,7 @@ export async function loadQTableFromURL(url) {
   return ndarray(floatArray, shape);
 }
 
-export function relativePosition(player1, player2) {
+function relativePosition(player1, player2) {
   if (rectangularCollision(player1, player2)) {
     return 1;
   }
@@ -96,7 +96,7 @@ export function decisionMaking(qDecisionTable, playerOne, playerTwo) {
 // ==========================
 // Controls
 // ==========================
-export async function actionPlayer2(choice, keys, player) {
+export function actionPlayer2(choice, keys, player) {
   keys.ArrowDown.pressed = false;
   keys.ArrowLeft.pressed = false;
   keys.ArrowRight.pressed = false;
@@ -126,32 +126,16 @@ export async function actionPlayer2(choice, keys, player) {
         break;
       case 4:
         if (!player.isAttacking) {
-          player.attackStyle = "style1";
+          const randomInt = Math.floor(Math.random() * 4) + 1;
+          player.attackStyle = `style${randomInt}`;
+          player.attackbox = player.sprites[`attack${randomInt}`].attackBox;
+          player.attackFrames = player.sprites[`attack${randomInt}`].framesMax;
+          determineDamage(player);
           player.attack();
-          player.attackbox = player.sprites.attack1.attackBox;
-          player.framesMax = player.sprites.attack1.framesMax;
-          console.log(player.framesMax);
-          console.log(player.attackFrames);
-          await determineDamage(player);
-          console.log(player.damage);
         }
         break;
       default:
         break;
     }
   }
-}
-
-export async function determineDamage(player) {
-  const avgSurface = 26759.23;
-  const avgFramesCount = 8.1;
-  if (!avgSurface || !avgFramesCount) {
-    player.damage = 0;
-    return;
-  }
-  const surface = player.attackBox.width * Math.abs(player.attackBox.height);
-  const framesCount = player.framesMax;
-  const calculatedDamage =
-    5 / (surface / avgSurface) / (avgFramesCount / framesCount);
-  player.damage = calculatedDamage > 10 ? 10 : calculatedDamage;
 }
