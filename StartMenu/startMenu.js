@@ -64,7 +64,7 @@ socket.on("roomsList", renderRooms);
 socket.on("roomCreated", ({ room, playerId }) => {
   sessionStorage.setItem("room", room);
   sessionStorage.setItem("playerId", playerId);
-  window.location.href = "/fighterSelection";
+  window.location.href = "/fighterSelection/";
 });
 
 socket.on("roomJoined", ({ room, playerAssignments }) => {
