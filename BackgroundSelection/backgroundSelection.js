@@ -18,7 +18,7 @@ import { MiniFighter } from "../classes.js";
 // Session & Socket Setup
 // ==========================
 // eslint-disable-next-line no-undef
-const socket = io();
+const socket = io('https://pruegelei.onrender.com');
 const room = sessionStorage.getItem("room");
 const clientId = localStorage.getItem("clientId");
 const myId = Number(sessionStorage.getItem("playerId"));
