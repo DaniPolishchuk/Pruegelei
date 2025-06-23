@@ -34,7 +34,7 @@ const allFighters = [];
 let myId = null;
 
 // eslint-disable-next-line no-undef
-const socket = io();
+const socket = io('https://pruegelei.onrender.com');
 let clientId = localStorage.getItem("clientId");
 if (!clientId) {
   clientId = Date.now() + "_" + Math.random().toString(36).slice(2);
